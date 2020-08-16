@@ -11,4 +11,11 @@ import hautomate
 
 
 _LOGGER = logging.getLogger(__name__)
-DOMAIN = 'automation'
+DOMAIN = 'hautomate'
+
+
+async def async_setup(hass, config):
+    hass.states.async_set('hautomate.hello', 'world')
+
+    # Return boolean to indicate that initialization was successful.
+    return True

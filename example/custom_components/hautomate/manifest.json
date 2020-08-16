@@ -8,6 +8,5 @@
     "requirements": [
         "git+https://github.com/boonhapus/hautomate.git"
     ],
-    // TODO:
-    // "config_flow": true,
+    "config_flow": true
 }
