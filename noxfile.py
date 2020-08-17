@@ -10,6 +10,7 @@ py37 = '3.7'
 py38 = '3.8'
 
 nox.options.reuse_existing_virtualenvs = True
+nox.options.error_on_external_run = True
 nox.options.sessions = [
     'test'
 ]

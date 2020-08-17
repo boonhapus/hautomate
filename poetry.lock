@@ -694,8 +694,12 @@ optional = false
 python-versions = ">=3.6.1"
 version = "8.1"
 
+[extras]
+test = []
+
 [metadata]
-content-hash = "68fa871100115da1728480edd208aa8b5d9d70029ac79a06017cc60c64fbe0e8"
+content-hash = "ebdec7632b2f3d0edd2167a98d6a03b7e2cd2f3db054ce67e8afa69f4eb37912"
+lock-version = "1.0"
 python-versions = "^3.8"
 
 [metadata.files]
