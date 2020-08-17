@@ -49,6 +49,7 @@ show_missing = true
 exclude_lines = [
 #     "__all__",
     "import",
+    "_log = .*"
 #     "except ImportError:",
 #     "pass",
 #     "# pragma: nocover",

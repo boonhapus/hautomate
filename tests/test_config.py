@@ -1,25 +1,29 @@
-from ward import test, fixture, skip
+import json
+
+from ward import test, raises
+import pydantic
+
+from hautomate.settings import HautoConfig
+
+from tests.fixtures import cfg_data_hauto
 
 
-@fixture
-def cfg_data_hauto():
-    opts = {
-        'apps_dir': '../example_apps',
-        'latitude': 33.05861,
-        'longitude': -96.74493,
-        'elevation': 214,
-        'timezone': 'America/Chicago',
-    }
-    return opts
-
-
-@skip('TODO, testing CI/CD')
-@test('hauto configuration')
+@test('positive scenarios: HAutoConfig')
 def _(opts=cfg_data_hauto):
-    assert False
+    model = HautoConfig(**opts)
+
+    # remove because comparing relative paths is impossibru
+    _opts = {k: v for k, v in opts.items() if k != 'apps_dir'}
+
+    excludes = {f for f in model.fields if f not in _opts}
+    model_data = model.json(exclude=excludes)
+    assert json.loads(model_data) == _opts
 
 
-@skip('TODO, testing CI/CD')
-@test('testing coverage')
+@test('negative scenarios: HAutoConfig')
 def _(opts=cfg_data_hauto):
-    assert True is False
+    with raises(pydantic.ValidationError):
+        HautoConfig(**{**opts, **{'timezone': 'America/Gotham City'}})
+
+    with raises(pydantic.ValidationError):
+        HautoConfig(**{**opts, **{'api_configs': {'time_travel': None}}})

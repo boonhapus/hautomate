@@ -54,11 +54,11 @@ class HautoConfig(Settings):
     def is_api_config(cls, data: dict):
         for api_name, settings in data.copy().items():
             try:
-                opts = importlib.import_module(f'hautomate.apis.{api_name}.settings')
+                cfg = importlib.import_module(f'hautomate.apis.{api_name}.settings')
             except ModuleNotFoundError:
                 raise ValueError(f"unrecognized api '{api_name}'")
 
-            data[api_name] = opts.Config.parse_obj(settings)
+            data[api_name] = cfg.Config.parse_obj(settings)
 
         return data
 
@@ -66,3 +66,6 @@ class HautoConfig(Settings):
 
     class Config:
         arbitrary_types_allowed = True
+        json_encoders = {
+            pendulum._Timezone: lambda v: v.name
+        }
