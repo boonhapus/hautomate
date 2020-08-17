@@ -19,6 +19,7 @@ def _(opts=cfg_data_hauto):
     assert False
 
 
+@skip('TODO, testing CI/CD')
 @test('testing coverage')
 def _(opts=cfg_data_hauto):
     assert True is False
