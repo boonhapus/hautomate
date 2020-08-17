@@ -1,3 +1,7 @@
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
+
 [tool.poetry]
 name = "hautomate"
 version = "0.1.0"
@@ -16,9 +20,34 @@ pydantic = "^1.6.1"
 databases = {extras = ["postgresql"], version = "^0.3.2"}
 
 [tool.poetry.dev-dependencies]
-ward = "^0.48.0-beta.0"
 ipykernel = "^5.3.4"
+flake8 = "^3.8.3"
+coverage = { version = ">=5.0,<6.0", extras = [ "toml" ] }
+nox = "^2020.5.24"
+ward = "^0.48.0-beta.0"
 
-[build-system]
-requires = ["poetry>=0.12"]
-build-backend = "poetry.masonry.api"
+[tool.coverage.run]
+branch = true
+source = [
+    "hautomate",
+    "tests"
+]
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+exclude_lines = [
+#     "__all__",
+    "import",
+#     "except ImportError:",
+#     "pass",
+#     "# pragma: nocover",
+#     "# pragma: no cover",
+#     "# pragma: nobranch",
+#     "# pragma: no branch",
+]
+
+[tool.ward]
+path = [
+    "tests"
+]
