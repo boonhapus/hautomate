@@ -10,7 +10,7 @@ authors = ["SupahNoob <_@boonhap.us>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.6"
+python = "^3.7"
 pendulum = "^2.1.2"
 httpx = "^0.14.1"
 async-timeout = "^3.0.1"
