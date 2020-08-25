@@ -28,7 +28,7 @@ class HAutomate:
         """
         Determine whether or not HAutomate is running.
         """
-        return self.state not in (CoreState.stopped, CoreState.finished)
+        return self._state not in (CoreState.stopped, CoreState.finished)
 
     #
 
