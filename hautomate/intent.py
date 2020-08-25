@@ -1,3 +1,4 @@
+from typing import Callable, List
 import itertools as it
 import asyncio
 
@@ -8,17 +9,54 @@ import pendulum
 _intent_id = it.count()
 
 
-class NoIntentsReady(StopAsyncIteration):
-    pass
+class Intent:
+    """
+    Represents a work item to be done.
+
+    Intents are the core building block of Hautomate. They are callable
+    items similar to asyncio's Task, in that they hold an internal state
+    and represent work that will be done in the future.
+    """
+    def __init__(self, event: str, func: Callable, *, timestamp: int=0):
+        self._id = next(_intent_id)
+        self.event = event
+        self.func = func
+        self.timestamp = timestamp
+
+    def __lt__(self, other) -> bool:
+        return (self.timestamp, self._id) < (other.timestamp, other._id)
+
+    def __repr__(self) -> str:
+        e = self.event
+        f = self.func
+        t = self.timestamp
+        return f'<Intent(event={e}, func={f}, timestamp={t}>'
 
 
 class IntentQueue(asyncio.PriorityQueue):
+    """
+    Wrapper around the PriorityQueue that is aware of Intents.
 
+    The IntentQueue has a few methods over the PQ that allow organized
+    collection of intents. Since Intents can be triggered or scheduled
+    to run in the future, grabbing many intents on one pass of the queue
+    is a totally valid operation.
+    """
     def __init__(self):
         super().__init__(maxsize=-1)
 
-    async def collect(self, timeout=1):
+    async def collect(self, timeout: float=1) -> List[Intent]:
         """
+        Grab all Intents which are ready at the time of call.
+
+        Parameters
+        ----------
+        timeout: float = 1
+          number of seconds to wait before moving on
+
+        Returns
+        -------
+        List[Intent]
         """
         now = pendulum.now(tz='UTC').timestamp()
         intents = []
@@ -45,24 +83,6 @@ class IntentQueue(asyncio.PriorityQueue):
         intents = await self.collect()
 
         if not intents and self.empty():
-            raise NoIntentsReady
+            raise StopAsyncIteration
 
         return intents
-
-
-class Intent:
-
-    def __init__(self, event, func, *, timestamp=0):
-        self._id = next(_intent_id)
-        self.event = event
-        self.func = func
-        self.timestamp = timestamp
-
-    def __lt__(self, other):
-        return (self.timestamp, self._id) < (other.timestamp, other._id)
-
-    def __repr__(self):
-        event = self.event
-        func = self.func
-        timestamp = self.timestamp
-        return f'<Intent({event=}, {func=}, {timestamp=}>'

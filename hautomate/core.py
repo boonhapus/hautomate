@@ -24,14 +24,9 @@ class HAutomate:
         self._state = CoreState.initialized
 
     @property
-    def state(self) -> CoreState:
-        """
-        """
-        return self._state
-
-    @property
     def is_running(self) -> bool:
         """
+        Determine whether or not HAutomate is running.
         """
         return self.state not in (CoreState.stopped, CoreState.finished)
 
@@ -39,6 +34,7 @@ class HAutomate:
 
     async def _consume(self):
         """
+        Background task to read events off the queue.
         """
         while self.is_running:
             async for intents in self._intent_queue:
@@ -110,21 +106,28 @@ class HAutomate:
 
 
 class EventBus:
+    """
+    A registry of events and their associated Intents.
 
+    The EventBus is responsible for communicating events throughout the
+    Hautomate platform. Events are consumed in a pub-sub architecture.
+    """
     def __init__(self, hauto: 'HAutomate'):
         self.hauto = hauto
         self._events = collections.defaultdict(list)
 
-    def subscribe(self, event, intent):
+    def subscribe(self, event: str, intent: Intent):
         """
+        Add an Intent to the registry.
         """
         if not isinstance(intent, Intent):
             intent = Intent(event, intent)
 
         self._events[event].append(intent)
 
-    async def fire(self, event):
+    async def fire(self, event: str):
         """
+        Fire an event at the registry.
         """
         intents = collections.deque()
 
