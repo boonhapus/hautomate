@@ -8,7 +8,7 @@ from hautomate.settings import HautoConfig
 from tests.fixtures import cfg_data_hauto
 
 
-@test('positive scenarios: HAutoConfig')
+@test('HAutoConfig', tags=['unit'])
 def _(opts=cfg_data_hauto):
     model = HautoConfig(**opts)
 
@@ -19,9 +19,7 @@ def _(opts=cfg_data_hauto):
     model_data = model.json(exclude=excludes)
     assert json.loads(model_data) == _opts
 
-
-@test('negative scenarios: HAutoConfig')
-def _(opts=cfg_data_hauto):
+    # negative scenarios
     with raises(pydantic.ValidationError):
         HautoConfig(**{**opts, **{'timezone': 'America/Gotham City'}})
 

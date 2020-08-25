@@ -1,8 +1,11 @@
 from asyncio import AbstractEventLoop
+import collections
 import asyncio
 import logging
 
 from .settings import HautoConfig
+from .intent import IntentQueue, Intent
+from .enums import CoreState
 
 
 _log = logging.getLogger(__name__)
@@ -15,7 +18,38 @@ class HAutomate:
     def __init__(self, config: HautoConfig, *, loop: AbstractEventLoop=None):
         self.loop = loop or asyncio.get_event_loop()
         self.config = config
+        self.bus = EventBus(self)
+        self._intent_queue = IntentQueue()
         self._stopped = asyncio.Event(loop=self.loop)
+        self._state = CoreState.initialized
+
+    @property
+    def state(self) -> CoreState:
+        """
+        """
+        return self._state
+
+    @property
+    def is_running(self) -> bool:
+        """
+        """
+        return self.state not in (CoreState.stopped, CoreState.finished)
+
+    #
+
+    async def _consume(self):
+        """
+        """
+        while self.is_running:
+            async for intents in self._intent_queue:
+                # do the thing with intents
+                pass
+
+        intents = await self._intent_queue.collect()
+        # TODO: need to consume intents until we get to the first STOP event.
+        # TODO: need to cancel tasks after we reach the finished event.
+
+    #
 
     def run(self, debug: bool=False):
         """
@@ -43,7 +77,8 @@ class HAutomate:
         # 4a.       API_READY
         # 5 .       EVT_READY
         """
-        # self._state = CoreState.starting
+        asyncio.create_task(self._consume())
+        self._state = CoreState.starting
 
         # We're doing I/O here .. but hey, who cares? No one's listening yet! :)
         # self._load_apis()
@@ -58,7 +93,7 @@ class HAutomate:
         # await self.bus.fire(
         #     EVT_START, return_when=ReturnWhen.all_completed, parent='CORE:HAutomate'
         # )
-        # self._state = CoreState.ready
+        self._state = CoreState.ready
         # await self.bus.fire(EVT_READY, parent='CORE:HAutomate')
         await self._stopped.wait()
 
@@ -66,9 +101,35 @@ class HAutomate:
         """
         Stop Hautomate.
         """
-        # self._state = CoreState.closing
+        self._state = CoreState.closing
         # await self.bus.fire(
         #     EVT_CLOSE, return_when=ReturnWhen.all_completed, parent='CORE:HAutomate'
         # )
-        # self._state = CoreState.stopped
+        self._state = CoreState.stopped
         self._stopped.set()
+
+
+class EventBus:
+
+    def __init__(self, hauto: 'HAutomate'):
+        self.hauto = hauto
+        self._events = collections.defaultdict(list)
+
+    def subscribe(self, event, intent):
+        """
+        """
+        if not isinstance(intent, Intent):
+            intent = Intent(event, intent)
+
+        self._events[event].append(intent)
+
+    async def fire(self, event):
+        """
+        """
+        intents = collections.deque()
+
+        if event in self._events:
+            intents.extend(self._events[event])
+
+        for intent in intents:
+            self.hauto._intent_queue.put_nowait(intent)
