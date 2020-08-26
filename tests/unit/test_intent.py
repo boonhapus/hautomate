@@ -1,5 +1,3 @@
-import ast
-
 from ward import test, fixture
 import pendulum
 
@@ -20,23 +18,6 @@ def dummy_intents(now=now):
         Intent('DUMMY', lambda: None),
         Intent('DUMMY', lambda: None)
     ]
-
-
-# @test('IntentQueue behaves correctly', tags=['unit', 'async'])
-# async def _(now: int=now):
-#     queue = IntentQueue()
-#     i = Intent('DUMMY', lambda *a, **kw: None, timestamp=now)
-#     await queue.put(i)
-
-#     i = Intent('DUMMY', lambda *a, **kw: None, timestamp=now + 2)
-#     await queue.put(i)
-
-#     async for intents in queue:
-#         for intent in intents:
-#             assert isinstance(intent, Intent)
-
-#     intents = await queue.collect(timeout=2)
-#     assert len(intents) == 0
 
 
 @test('IntentQueue is AsyncIterable', tags=['unit', 'async'])
