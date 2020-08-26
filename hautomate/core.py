@@ -123,7 +123,7 @@ class EventBus:
         if not isinstance(intent, Intent):
             intent = Intent(event, intent)
 
-        self._events[event].append(intent)
+        self._events[intent.event].append(intent)
 
     async def fire(self, event: str):
         """
@@ -136,3 +136,5 @@ class EventBus:
 
         for intent in intents:
             self.hauto._intent_queue.put_nowait(intent)
+
+        return intents
