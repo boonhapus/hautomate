@@ -10,15 +10,31 @@ from tests.fixtures import cfg_hauto
 
 @test('HAutomate.start, .stop', tags=['integration', 'async'])
 async def _(cfg=cfg_hauto):
+
+    def _run_coro_soon(coro):
+        asyncio.create_task(coro)
+
+    loop = asyncio.get_event_loop()
     hauto = HAutomate(cfg)
     assert hauto._state == CoreState.initialized
 
-    # start up in the background
-    asyncio.create_task(hauto.start())
-
-    # do some processing
     hauto.bus.subscribe('DUMMY', lambda *a, **kw: None)
-    await hauto.bus.fire('DUMMY')
+
+    # queue up some processing
+    coros = [
+        hauto.start(),
+        hauto.bus.fire('DUMMY_1'),
+        hauto.bus.fire('DUMMY_2'),
+    ]
+
+    for coro in coros:
+        loop.call_soon(_run_coro_soon, coro)
+
+    # allow the above tasks to run
+    await asyncio.sleep(0.01)
+    assert hauto._state == CoreState.ready
+    assert hauto._stopped.is_set() is False
+    assert hauto.is_running is True
 
     await hauto.stop()
     assert hauto._state == CoreState.stopped

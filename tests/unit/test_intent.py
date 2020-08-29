@@ -60,11 +60,3 @@ async def _(dummy_intents=dummy_intents):
 
     intent = await queue.get()
     assert intent == dummy_intents[0]
-
-
-@test('IntentQueue stop iteration cleanly', tags=['unit', 'async'])
-async def _():
-    queue = IntentQueue()
-
-    async for intents in queue:
-        pass
