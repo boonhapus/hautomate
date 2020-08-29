@@ -53,7 +53,7 @@ class Asyncable:
 
           async - an asynchronous function
           safe_sync - a callback that doesn't do significant IO- or CPU-bound work
-          potentiall_unsafe_sync - a callback that might block the event loop
+          potentially_unsafe_sync - a callback that might block the event loop
     """
     def __init__(self, func: Callable, *, concurrency: str=None):
         self.func = func
@@ -77,12 +77,11 @@ class Asyncable:
             # We're looking for a coroutine, so something like
             # loop.call_soon_threadsafe(loop.run_in_executor, ...) would not work in
             # this case (since you can't await a handle).
-            async def _wrapped(func):
-                nonlocal main_loop
-                return await main_loop.run_in_executor(None, func)
+            async def _wrapped(func, loop):
+                return await loop.run_in_executor(None, func)
 
             func = ft.partial(self.func, *a, **kw)
-            coro = _wrapped(func)
+            coro = _wrapped(func, main_loop)
 
         else:
             coro = self.func(*a, **kw)
