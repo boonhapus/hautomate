@@ -72,7 +72,8 @@ async def _(name=each(*_NAME[:-2]), concurrency=each(*_CONCURRENCY[:-2]), trial=
     with fs.ThreadPoolExecutor() as ex:
         f = ex.submit(_other_thread)
 
-        # allow background tasks to complete
-        await asyncio.sleep(1)
+        # allow background task switching to happen
+        while not f.done():
+            await asyncio.sleep(0)
 
         assert f.result() == 1

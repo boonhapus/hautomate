@@ -30,8 +30,10 @@ async def _(cfg=cfg_hauto):
     for coro in coros:
         loop.call_soon(_run_coro_soon, coro)
 
-    # allow the above tasks to run
+    # allow our queued tasks to begin
     await asyncio.sleep(0.01)
+
+    # we've started HAuto now
     assert hauto._state == CoreState.ready
     assert hauto._stopped.is_set() is False
     assert hauto.is_running is True
