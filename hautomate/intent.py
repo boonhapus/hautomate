@@ -5,11 +5,13 @@ import asyncio
 import async_timeout
 import pendulum
 
+from hautomate.util.async_ import Asyncable
+
 
 _intent_id = it.count()
 
 
-class Intent:
+class Intent(Asyncable):
     """
     Represents a work item to be done.
 
@@ -18,9 +20,9 @@ class Intent:
     and represent work that will be done in the future.
     """
     def __init__(self, event: str, func: Callable, *, timestamp: int=0):
+        super().__init__(func)
         self._id = next(_intent_id)
         self.event = event
-        self.func = func
         self.timestamp = timestamp
 
     def __lt__(self, other) -> bool:
@@ -45,7 +47,7 @@ class IntentQueue(asyncio.PriorityQueue):
     def __init__(self):
         super().__init__(maxsize=-1)
 
-    async def collect(self, timeout: float=1) -> List[Intent]:
+    async def collect(self) -> List[Intent]:
         """
         Grab all Intents which are ready at the time of call.
 
@@ -62,11 +64,7 @@ class IntentQueue(asyncio.PriorityQueue):
         intents = []
 
         while True:
-            try:
-                async with async_timeout.timeout(timeout):
-                    intent = await self.get()
-            except asyncio.TimeoutError:
-                break
+            intent = await self.get()
 
             if intent.timestamp > now:
                 self.put_nowait(intent)
@@ -80,9 +78,4 @@ class IntentQueue(asyncio.PriorityQueue):
         return self
 
     async def __anext__(self):
-        intents = await self.collect()
-
-        if not intents and self.empty():
-            raise StopAsyncIteration
-
-        return intents
+        return await self.collect()

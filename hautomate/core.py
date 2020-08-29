@@ -22,6 +22,7 @@ class HAutomate:
         self._intent_queue = IntentQueue()
         self._stopped = asyncio.Event(loop=self.loop)
         self._state = CoreState.initialized
+        self._consumer = None
 
     @property
     def is_running(self) -> bool:
@@ -36,14 +37,9 @@ class HAutomate:
         """
         Background task to read events off the queue.
         """
-        while self.is_running:
-            async for intents in self._intent_queue:
-                # do the thing with intents
-                pass
-
-        intents = await self._intent_queue.collect()
-        # TODO: need to consume intents until we get to the first STOP event.
-        # TODO: need to cancel tasks after we reach the finished event.
+        async for intents in self._intent_queue:
+            # do the thing with intents
+            pass
 
     #
 
@@ -73,13 +69,13 @@ class HAutomate:
         # 4a.       API_READY
         # 5 .       EVT_READY
         """
-        asyncio.create_task(self._consume())
+        self._consumer = asyncio.create_task(self._consume())
         self._state = CoreState.starting
 
         # We're doing I/O here .. but hey, who cares? No one's listening yet! :)
         # self._load_apis()
         # self.apps._initial_load_apps()
-        # self.loop.set_debug(debug)
+        self.loop.set_debug(debug)
 
         # shh, this event is super secret!
         # await self.bus.fire(
@@ -103,6 +99,12 @@ class HAutomate:
         # )
         self._state = CoreState.stopped
         self._stopped.set()
+        self._consumer.cancel()
+
+        # TODO: need to consume intents until we get to the first STOP event.
+        # TODO: need to cancel tasks after we reach the finished event.
+        # intents = await self._intent_queue.collect()
+
 
 
 class EventBus:
