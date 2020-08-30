@@ -68,10 +68,10 @@ class HAutomate:
         self.loop.set_debug(debug)
 
         # shh, this event is super secret!
-        await self.bus.fire(_EVT_INIT, wait_for='ALL_COMPLETED')
-        await self.bus.fire(EVT_START, wait_for='ALL_COMPLETED')
+        await self.bus.fire(_EVT_INIT, parent=self, wait_for='ALL_COMPLETED')
+        await self.bus.fire(EVT_START, parent=self, wait_for='ALL_COMPLETED')
         self._state = CoreState.ready
-        await self.bus.fire(EVT_READY, wait_for='ALL_COMPLETED')
+        await self.bus.fire(EVT_READY, parent=self, wait_for='ALL_COMPLETED')
         await self._stopped.wait()
 
     async def stop(self):
@@ -79,7 +79,7 @@ class HAutomate:
         Stop Hautomate.
         """
         self._state = CoreState.closing
-        await self.bus.fire(EVT_CLOSE)
+        await self.bus.fire(EVT_CLOSE, parent=self)
         self._state = CoreState.stopped
         self._stopped.set()
 

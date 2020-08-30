@@ -38,10 +38,10 @@ async def _(cfg=cfg_hauto):
     for _ in range(5):
         hauto.bus.subscribe('DUMMY', lambda *a, ctx, **kw: None)
 
-    _, intents = await hauto.bus.fire('DUMMY')
+    _, intents = await hauto.bus.fire('DUMMY', parent='ward.test')
     assert len(intents) == 5
 
-    _, intents = await hauto.bus.fire('NULL')
+    _, intents = await hauto.bus.fire('NULL', parent='ward.test')
     assert len(intents) == 0
 
 
@@ -63,19 +63,19 @@ async def _(cfg=cfg_hauto):
     for _ in range(5):
         hauto.bus.subscribe('DUMMY', _dummy)
 
-    done, pending = await hauto.bus.fire('DUMMY')
+    done, pending = await hauto.bus.fire('DUMMY', parent='ward.test')
     assert len(done) == 0
     assert len(pending) == 5
 
-    done, pending = await hauto.bus.fire('DUMMY', wait_for='FIRST_COMPLETED')
+    done, pending = await hauto.bus.fire('DUMMY', parent='ward.test', wait_for='FIRST_COMPLETED')
     assert len(done) == 1
     assert len(pending) == 4
 
-    done, pending = await hauto.bus.fire('DUMMY', wait_for='ALL_COMPLETED')
+    done, pending = await hauto.bus.fire('DUMMY', parent='ward.test', wait_for='ALL_COMPLETED')
     assert len(done) == 5
     assert len(pending) == 0
 
-    done, pending = await hauto.bus.fire('NULL')
+    done, pending = await hauto.bus.fire('NULL', parent='ward.test')
     assert len(done) == 0
     assert len(pending) == 0
 
@@ -91,7 +91,7 @@ async def _(cfg=cfg_hauto):
     assert intent_2.calls == 0
     assert intent_3.calls == 0
 
-    await hauto.bus.fire('DUMMY')
+    await hauto.bus.fire('DUMMY', parent='ward.test')
     hauto.loop.call_soon(asyncio.create_task, hauto.stop())
     await hauto.start()
 

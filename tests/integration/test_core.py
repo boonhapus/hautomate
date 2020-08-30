@@ -23,9 +23,9 @@ async def _(cfg=cfg_hauto):
     # queue up some processing
     coros = [
         hauto.start(),
-        hauto.bus.fire('DUMMY'),
-        hauto.bus.fire('DUMMY_1'),
-        hauto.bus.fire('DUMMY_2')
+        hauto.bus.fire('DUMMY', parent='ward.test'),
+        hauto.bus.fire('DUMMY_1', parent='ward.test'),
+        hauto.bus.fire('DUMMY_2', parent='ward.test')
     ]
 
     for coro in coros:
