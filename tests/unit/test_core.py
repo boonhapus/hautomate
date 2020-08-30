@@ -1,3 +1,5 @@
+import asyncio
+
 from ward import test
 
 from hautomate.intent import Intent
@@ -41,3 +43,23 @@ async def _(cfg=cfg_hauto):
 
     intents = await hauto.bus.fire('NULL')
     assert len(intents) == 0
+
+
+@test('Core processes many events', tags=['unit'])
+async def _(cfg=cfg_hauto):
+    hauto = HAutomate(cfg)
+    intent_1 = hauto.bus.subscribe('DUMMY', intent=lambda: 1)
+    intent_2 = hauto.bus.subscribe('DUMMY', intent=lambda: 2)
+    intent_3 = hauto.bus.subscribe('DUMMY', intent=lambda: 3)
+
+    assert intent_1.calls == 0
+    assert intent_2.calls == 0
+    assert intent_3.calls == 0
+
+    asyncio.create_task(hauto.bus.fire('DUMMY'))
+    hauto.loop.call_later(0, asyncio.create_task, hauto.stop())
+    await hauto.start()
+
+    assert intent_1.calls == 1
+    assert intent_2.calls == 1
+    assert intent_3.calls == 1
