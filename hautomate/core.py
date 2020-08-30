@@ -109,10 +109,10 @@ class EventBus:
         """
         Fire an event at the registry.
         """
-        intents = collections.deque()
+        intents = set()
 
         if event in self._events:
-            intents.extend(self._events[event])
+            intents.update(self._events[event])
 
         ctx_data = {
             'hauto': self.hauto,
@@ -130,5 +130,8 @@ class EventBus:
 
         if tasks and wait_for is not None:
             done, pending = await asyncio.wait(tasks, return_when=wait_for)
+        else:
+            done = set()
+            pending = intents
 
-        return intents
+        return done, pending

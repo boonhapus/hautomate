@@ -18,7 +18,7 @@ class Context:
         self._created_ts = pendulum.now(tz='UTC').timestamp()
 
     @property
-    def when(self):
+    def when(self) -> [pendulum.DateTime, None]:
         if self._when_ts == 0:
             return None
 
@@ -27,6 +27,3 @@ class Context:
     @property
     def created_at(self) -> pendulum.DateTime:
         return pendulum.from_timestamp(self._created_ts, tz='UTC')#.in_timezone(self.hauto.timezone)
-
-    def __lt__(self, other) -> bool:
-        return (self._when_ts, self._id) < (other._when_ts, other._id)

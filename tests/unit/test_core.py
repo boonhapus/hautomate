@@ -38,11 +38,46 @@ async def _(cfg=cfg_hauto):
     for _ in range(5):
         hauto.bus.subscribe('DUMMY', lambda *a, ctx, **kw: None)
 
-    intents = await hauto.bus.fire('DUMMY')
+    _, intents = await hauto.bus.fire('DUMMY')
     assert len(intents) == 5
 
-    intents = await hauto.bus.fire('NULL')
+    _, intents = await hauto.bus.fire('NULL')
     assert len(intents) == 0
+
+
+@test('EventBus waits for Intents to complete', tags=['unit'])
+async def _(cfg=cfg_hauto):
+    hauto = HAutomate(cfg)
+
+    import random
+
+    async def _dummy(ctx):
+        """
+        Attempt to make it highly unlikely that two
+        intents will have the same processing time.
+
+        This helps test FIRST_COMPLETED.
+        """
+        await asyncio.sleep(random.randint(0, 50000) / 100000.0)
+
+    for _ in range(5):
+        hauto.bus.subscribe('DUMMY', _dummy)
+
+    done, pending = await hauto.bus.fire('DUMMY')
+    assert len(done) == 0
+    assert len(pending) == 5
+
+    done, pending = await hauto.bus.fire('DUMMY', wait_for='FIRST_COMPLETED')
+    assert len(done) == 1
+    assert len(pending) == 4
+
+    done, pending = await hauto.bus.fire('DUMMY', wait_for='ALL_COMPLETED')
+    assert len(done) == 5
+    assert len(pending) == 0
+
+    done, pending = await hauto.bus.fire('NULL')
+    assert len(done) == 0
+    assert len(pending) == 0
 
 
 @test('Core processes many events', tags=['unit'])
