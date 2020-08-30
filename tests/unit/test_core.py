@@ -14,13 +14,13 @@ def _(cfg=cfg_hauto):
     assert len(hauto.bus._events) == 0
 
     # with a naked callable
-    intent = lambda *a, **kw: None
+    intent = lambda *a, ctx, **kw: None
     hauto.bus.subscribe('DUMMY', intent)
     assert len(hauto.bus._events) == 1
     assert len(hauto.bus._events['DUMMY']) == 1
 
     # with an Intent
-    intent = Intent('DUMMY', lambda *a, **kw: None)
+    intent = Intent('DUMMY', lambda *a, ctx, **kw: None)
     hauto.bus.subscribe('DUMMY', intent)
     assert len(hauto.bus._events) == 1
     assert len(hauto.bus._events['DUMMY']) == 2
@@ -36,7 +36,7 @@ async def _(cfg=cfg_hauto):
     assert len(hauto.bus._events) == 0
 
     for _ in range(5):
-        hauto.bus.subscribe('DUMMY', lambda *a, **kw: None)
+        hauto.bus.subscribe('DUMMY', lambda *a, ctx, **kw: None)
 
     intents = await hauto.bus.fire('DUMMY')
     assert len(intents) == 5
@@ -48,16 +48,16 @@ async def _(cfg=cfg_hauto):
 @test('Core processes many events', tags=['unit'])
 async def _(cfg=cfg_hauto):
     hauto = HAutomate(cfg)
-    intent_1 = hauto.bus.subscribe('DUMMY', intent=lambda: 1)
-    intent_2 = hauto.bus.subscribe('DUMMY', intent=lambda: 2)
-    intent_3 = hauto.bus.subscribe('DUMMY', intent=lambda: 3)
+    intent_1 = hauto.bus.subscribe('DUMMY', intent=lambda *a, ctx, **kw: 1)
+    intent_2 = hauto.bus.subscribe('DUMMY', intent=lambda *a, ctx, **kw: 2)
+    intent_3 = hauto.bus.subscribe('DUMMY', intent=lambda *a, ctx, **kw: 3)
 
     assert intent_1.calls == 0
     assert intent_2.calls == 0
     assert intent_3.calls == 0
 
-    asyncio.create_task(hauto.bus.fire('DUMMY'))
-    hauto.loop.call_later(0, asyncio.create_task, hauto.stop())
+    await hauto.bus.fire('DUMMY')
+    hauto.loop.call_soon(asyncio.create_task, hauto.stop())
     await hauto.start()
 
     assert intent_1.calls == 1

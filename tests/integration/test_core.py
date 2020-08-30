@@ -23,15 +23,17 @@ async def _(cfg=cfg_hauto):
     # queue up some processing
     coros = [
         hauto.start(),
+        hauto.bus.fire('DUMMY'),
         hauto.bus.fire('DUMMY_1'),
-        hauto.bus.fire('DUMMY_2'),
+        hauto.bus.fire('DUMMY_2')
     ]
 
     for coro in coros:
         loop.call_soon(_run_coro_soon, coro)
 
     # allow our queued tasks to begin
-    await asyncio.sleep(0.01)
+    # TODO: impl hauto.api.triggered.wait_for(EVT)
+    await asyncio.sleep(1)
 
     # we've started HAuto now
     assert hauto._state == CoreState.ready

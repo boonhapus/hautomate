@@ -1,10 +1,12 @@
+from typing import Union
 from asyncio import AbstractEventLoop
 import collections
 import asyncio
 import logging
 
 from .settings import HautoConfig
-from .intent import IntentQueue, Intent
+from .context import Context
+from .intent import Intent
 from .events import _EVT_INIT, EVT_START, EVT_READY, EVT_CLOSE
 from .enums import CoreState
 
@@ -20,10 +22,8 @@ class HAutomate:
         self.loop = loop or asyncio.get_event_loop()
         self.config = config
         self.bus = EventBus(self)
-        self._intent_queue = IntentQueue()
         self._stopped = asyncio.Event(loop=self.loop)
         self._state = CoreState.initialized
-        self._consumer = None
 
     @property
     def is_running(self) -> bool:
@@ -31,16 +31,6 @@ class HAutomate:
         Determine whether or not HAutomate is running.
         """
         return self._state not in (CoreState.stopped, CoreState.finished)
-
-    #
-
-    async def _consume(self):
-        """
-        Background task to read events off the queue.
-        """
-        async for intents in self._intent_queue:
-            injected = [i() for i in intents]
-            await asyncio.gather(*injected)
 
     #
 
@@ -70,7 +60,6 @@ class HAutomate:
         # 4a.       API_READY
         # 5 .       EVT_READY
         """
-        self._consumer = asyncio.create_task(self._consume())
         self._state = CoreState.starting
 
         # We're doing I/O here .. but hey, who cares? No one's listening yet! :)
@@ -79,10 +68,10 @@ class HAutomate:
         self.loop.set_debug(debug)
 
         # shh, this event is super secret!
-        await self.bus.fire(_EVT_INIT)
-        await self.bus.fire(EVT_START)
+        await self.bus.fire(_EVT_INIT, wait_for='ALL_COMPLETED')
+        await self.bus.fire(EVT_START, wait_for='ALL_COMPLETED')
         self._state = CoreState.ready
-        await self.bus.fire(EVT_READY)
+        await self.bus.fire(EVT_READY, wait_for='ALL_COMPLETED')
         await self._stopped.wait()
 
     async def stop(self):
@@ -93,11 +82,6 @@ class HAutomate:
         await self.bus.fire(EVT_CLOSE)
         self._state = CoreState.stopped
         self._stopped.set()
-        self._consumer.cancel()
-
-        # TODO: need to consume intents until we get to the first STOP event.
-        # TODO: need to cancel tasks after we reach the finished event.
-        # intents = await self._intent_queue.collect()
 
 
 class EventBus:
@@ -121,7 +105,7 @@ class EventBus:
         self._events[intent.event].append(intent)
         return intent
 
-    async def fire(self, event: str):
+    async def fire(self, event: str, *, parent: Union[Intent, HAutomate]=None, wait_for=None):
         """
         Fire an event at the registry.
         """
@@ -130,11 +114,21 @@ class EventBus:
         if event in self._events:
             intents.extend(self._events[event])
 
-        for intent in intents:
-            self.hauto._intent_queue.put_nowait(intent)
+        ctx_data = {
+            'hauto': self.hauto,
+            'event': event,
+            # 'target': <filled below>,
+            'parent': parent if parent is not None else self.hauto,
+        }
 
-        # if not self.hauto._intent_queue.empty():
-        #     async for intents in self.hauto._intent_queue:
-        #         print(intents)
+        tasks = []
+
+        for intent in intents:
+            ctx = Context(**ctx_data, target=intent)
+            injected = intent(ctx=ctx)
+            tasks.append(injected)
+
+        if tasks and wait_for is not None:
+            done, pending = await asyncio.wait(tasks, return_when=wait_for)
 
         return intents

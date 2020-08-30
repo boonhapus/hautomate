@@ -2,7 +2,7 @@ import concurrent.futures as fs
 import functools as ft
 import asyncio
 
-from ward import test, fixture, each, raises
+from ward import test, each, raises
 
 from hautomate.util.async_ import is_main_thread, determine_concurrency, Asyncable
 
