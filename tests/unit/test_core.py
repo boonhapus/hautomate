@@ -38,46 +38,49 @@ async def _(cfg=cfg_hauto):
     for _ in range(5):
         hauto.bus.subscribe('DUMMY', lambda *a, ctx, **kw: None)
 
-    _, intents = await hauto.bus.fire('DUMMY', parent='ward.test')
+    _, intents = await hauto.bus.fire('DUMMY', parent='ward')
     assert len(intents) == 5
 
-    _, intents = await hauto.bus.fire('NULL', parent='ward.test')
+    _, intents = await hauto.bus.fire('NULL', parent='ward')
     assert len(intents) == 0
 
 
 @test('EventBus waits for Intents to complete', tags=['unit'])
 async def _(cfg=cfg_hauto):
     hauto = HAutomate(cfg)
-
-    import random
+    i = 0
 
     async def _dummy(ctx):
         """
-        Attempt to make it highly unlikely that two
-        intents will have the same processing time.
+        IO time is spaced out in 0.05s intervals.
 
-        This helps test FIRST_COMPLETED.
+        This should ensure that only 1 intent resolves in a single event
+        loop cycle, even on slower machines. This helps to test
+        FIRST_COMPLETED. We're really just looking to ensure
+        reproducibility here.
         """
-        await asyncio.sleep(random.randint(0, 50000) / 100000.0)
+        nonlocal i
+        i += 1
+        await asyncio.sleep(i * 0.01)
 
     for _ in range(5):
         hauto.bus.subscribe('DUMMY', _dummy)
 
-    done, pending = await hauto.bus.fire('DUMMY', parent='ward.test')
+    done, todo = await hauto.bus.fire('DUMMY', parent='ward')
     assert len(done) == 0
-    assert len(pending) == 5
+    assert len(todo) == 5
 
-    done, pending = await hauto.bus.fire('DUMMY', parent='ward.test', wait_for='FIRST_COMPLETED')
+    done, todo = await hauto.bus.fire('DUMMY', parent='ward', wait='FIRST_COMPLETED')
     assert len(done) == 1
-    assert len(pending) == 4
+    assert len(todo) == 4
 
-    done, pending = await hauto.bus.fire('DUMMY', parent='ward.test', wait_for='ALL_COMPLETED')
+    done, todo = await hauto.bus.fire('DUMMY', parent='ward', wait='ALL_COMPLETED')
     assert len(done) == 5
-    assert len(pending) == 0
+    assert len(todo) == 0
 
-    done, pending = await hauto.bus.fire('NULL', parent='ward.test')
+    done, todo = await hauto.bus.fire('NULL', parent='ward')
     assert len(done) == 0
-    assert len(pending) == 0
+    assert len(todo) == 0
 
 
 @test('Core processes many events', tags=['unit'])
@@ -91,7 +94,7 @@ async def _(cfg=cfg_hauto):
     assert intent_2.calls == 0
     assert intent_3.calls == 0
 
-    await hauto.bus.fire('DUMMY', parent='ward.test')
+    await hauto.bus.fire('DUMMY', parent='ward')
     hauto.loop.call_soon(asyncio.create_task, hauto.stop())
     await hauto.start()
 

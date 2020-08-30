@@ -68,10 +68,10 @@ class HAutomate:
         self.loop.set_debug(debug)
 
         # shh, this event is super secret!
-        await self.bus.fire(_EVT_INIT, parent=self, wait_for='ALL_COMPLETED')
-        await self.bus.fire(EVT_START, parent=self, wait_for='ALL_COMPLETED')
+        await self.bus.fire(_EVT_INIT, parent=self, wait='ALL_COMPLETED')
+        await self.bus.fire(EVT_START, parent=self, wait='ALL_COMPLETED')
         self._state = CoreState.ready
-        await self.bus.fire(EVT_READY, parent=self, wait_for='ALL_COMPLETED')
+        await self.bus.fire(EVT_READY, parent=self, wait='ALL_COMPLETED')
         await self._stopped.wait()
 
     async def stop(self):
@@ -105,7 +105,7 @@ class EventBus:
         self._events[intent.event].append(intent)
         return intent
 
-    async def fire(self, event: str, *, parent: Union[Intent, HAutomate], wait_for: str=None):
+    async def fire(self, event: str, *, parent: Union[Intent, HAutomate], wait: str=None):
         """
         Fire an event at the registry.
 
@@ -117,7 +117,7 @@ class EventBus:
         parent : Intent or HAutomate
             source of the event trigger
 
-        wait_for : str
+        wait : str
             one of FIRST_COMPLETED, ALL_COMPLETED, FIRST_EXCEPTION
 
         Returns
@@ -143,8 +143,8 @@ class EventBus:
             injected = intent(ctx=ctx)
             tasks.append(injected)
 
-        if tasks and wait_for is not None:
-            done, pending = await asyncio.wait(tasks, return_when=wait_for)
+        if tasks and (wait is not None):
+            done, pending = await asyncio.wait(tasks, return_when=wait)
         else:
             done = set()
             pending = intents
