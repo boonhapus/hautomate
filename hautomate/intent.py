@@ -24,6 +24,14 @@ class Intent(Asyncable):
         self._id = next(_intent_id)
         self.event = event
         self.timestamp = timestamp
+        # internal statistics
+        self.calls = 0
+
+    def __call__(self, *args, **kwargs):
+        print(self)
+        self.calls += 1
+        r = super().__call__(*args, **kwargs)
+        return r
 
     def __lt__(self, other) -> bool:
         return (self.timestamp, self._id) < (other.timestamp, other._id)
@@ -32,7 +40,7 @@ class Intent(Asyncable):
         e = self.event
         f = self.func
         t = self.timestamp
-        return f'<Intent(event={e}, func={f}, timestamp={t}>'
+        return f'<Intent(event="{e}", func={f}, timestamp={t}>'
 
 
 class IntentQueue(asyncio.PriorityQueue):
@@ -71,6 +79,9 @@ class IntentQueue(asyncio.PriorityQueue):
                 break
 
             intents.append(intent)
+
+            if self.empty():
+                break
 
         return intents
 

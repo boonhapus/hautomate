@@ -5,6 +5,7 @@ import logging
 
 from .settings import HautoConfig
 from .intent import IntentQueue, Intent
+from .events import _EVT_INIT, EVT_START, EVT_READY, EVT_CLOSE
 from .enums import CoreState
 
 
@@ -38,8 +39,8 @@ class HAutomate:
         Background task to read events off the queue.
         """
         async for intents in self._intent_queue:
-            # do the thing with intents
-            pass
+            injected = [i() for i in intents]
+            await asyncio.gather(*injected)
 
     #
 
@@ -78,15 +79,10 @@ class HAutomate:
         self.loop.set_debug(debug)
 
         # shh, this event is super secret!
-        # await self.bus.fire(
-        #     'INITIALIZED', return_when=ReturnWhen.all_completed, parent='CORE:HAutomate'
-        # )
-
-        # await self.bus.fire(
-        #     EVT_START, return_when=ReturnWhen.all_completed, parent='CORE:HAutomate'
-        # )
+        await self.bus.fire(_EVT_INIT)
+        await self.bus.fire(EVT_START)
         self._state = CoreState.ready
-        # await self.bus.fire(EVT_READY, parent='CORE:HAutomate')
+        await self.bus.fire(EVT_READY)
         await self._stopped.wait()
 
     async def stop(self):
@@ -94,9 +90,7 @@ class HAutomate:
         Stop Hautomate.
         """
         self._state = CoreState.closing
-        # await self.bus.fire(
-        #     EVT_CLOSE, return_when=ReturnWhen.all_completed, parent='CORE:HAutomate'
-        # )
+        await self.bus.fire(EVT_CLOSE)
         self._state = CoreState.stopped
         self._stopped.set()
         self._consumer.cancel()
@@ -104,7 +98,6 @@ class HAutomate:
         # TODO: need to consume intents until we get to the first STOP event.
         # TODO: need to cancel tasks after we reach the finished event.
         # intents = await self._intent_queue.collect()
-
 
 
 class EventBus:
@@ -126,6 +119,7 @@ class EventBus:
             intent = Intent(event, intent)
 
         self._events[intent.event].append(intent)
+        return intent
 
     async def fire(self, event: str):
         """
@@ -138,5 +132,9 @@ class EventBus:
 
         for intent in intents:
             self.hauto._intent_queue.put_nowait(intent)
+
+        # if not self.hauto._intent_queue.empty():
+        #     async for intents in self.hauto._intent_queue:
+        #         print(intents)
 
         return intents
