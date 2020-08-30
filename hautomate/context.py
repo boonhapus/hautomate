@@ -1,3 +1,4 @@
+from typing import Union
 import itertools as it
 
 import pendulum
@@ -7,8 +8,18 @@ _context_id = it.count()
 
 
 class Context:
-
-    def __init__(self, hauto, event, *, target, parent, when=0):
+    """
+    Execution context under which an Intent is fired.
+    """
+    def __init__(
+        self,
+        hauto: 'HAutomate',
+        event: str,
+        *,
+        target: 'Intent',
+        parent: Union['Intent', 'HAutomate'],
+        when: int=0
+    ):
         self._id = next(_context_id)
         self._hauto = hauto
         self.event = event
@@ -18,7 +29,12 @@ class Context:
         self._created_ts = pendulum.now(tz='UTC').timestamp()
 
     @property
-    def when(self) -> [pendulum.DateTime, None]:
+    def when(self) -> Union[pendulum.DateTime, None]:
+        """
+        Datetime when the Context describes.
+
+        Typically, this is when the Intent fires.
+        """
         if self._when_ts == 0:
             return None
 
@@ -26,4 +42,7 @@ class Context:
 
     @property
     def created_at(self) -> pendulum.DateTime:
+        """
+        Datetime when the Context was created.
+        """
         return pendulum.from_timestamp(self._created_ts, tz='UTC')#.in_timezone(self.hauto.timezone)

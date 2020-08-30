@@ -105,9 +105,24 @@ class EventBus:
         self._events[intent.event].append(intent)
         return intent
 
-    async def fire(self, event: str, *, parent: Union[Intent, HAutomate]=None, wait_for=None):
+    async def fire(self, event: str, *, parent: Union[Intent, HAutomate], wait_for: str=None):
         """
         Fire an event at the registry.
+
+        Parameters
+        ----------
+        event : str
+            name of trigger event
+
+        parent : Intent or HAutomate
+            source of the event trigger
+
+        wait_for : str
+            one of FIRST_COMPLETED, ALL_COMPLETED, FIRST_EXCEPTION
+
+        Returns
+        -------
+        done, pending : set[Intents, ...]
         """
         intents = set()
 
