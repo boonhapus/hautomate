@@ -29,6 +29,13 @@ class Context:
         self._created_ts = pendulum.now(tz='UTC').timestamp()
 
     @property
+    def hauto(self):
+        """
+        Grab a reference to HAutomate.
+        """
+        return self._hauto
+
+    @property
     def when(self) -> Union[pendulum.DateTime, None]:
         """
         Datetime when the Context describes.

@@ -4,6 +4,8 @@ import collections
 import asyncio
 import logging
 
+import pendulum
+
 from .settings import HautoConfig
 from .context import Context
 from .intent import Intent
@@ -31,6 +33,38 @@ class HAutomate:
         Determine whether or not HAutomate is running.
         """
         return self._state not in (CoreState.stopped, CoreState.finished)
+
+    @property
+    def now(self) -> pendulum.DateTime:
+        """
+        Get HAutomate's current time.
+        """
+        return 'now'  # TODO
+
+    #
+
+    async def _intent_runner(self, ctx: Context, intent: Intent):
+        """
+        Wrapper around Intent execution.
+
+        Intent Runner catches errors during execution and handles them
+        gracefully.
+        """
+        if not await intent.can_run(ctx):
+            return
+
+        # await self.bus.fire(EVT_INTENT_START)
+
+        try:
+            await intent(ctx)
+        except asyncio.CancelledError:
+            _log.error(f'intent {intent} cancelled!')
+        except Exception as exc:
+            _log.exception(f'intent {intent} errored!')
+            # if hasattr(intent.parent, 'on_intent_error'):
+            #     await intent.parent.on_intent_error(ctx, error=exc)
+        # finally:
+        #     await self.bus.fire(EVT_INTENT_END)
 
     #
 
@@ -140,8 +174,9 @@ class EventBus:
 
         for intent in intents:
             ctx = Context(**ctx_data, target=intent)
-            injected = intent(ctx=ctx)
-            tasks.append(injected)
+            wrapped = self.hauto._intent_runner(ctx, intent)
+            task = asyncio.create_task(wrapped)
+            tasks.append(task)
 
         if tasks and (wait is not None):
             done, pending = await asyncio.wait(tasks, return_when=wait)
