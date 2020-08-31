@@ -7,7 +7,7 @@ https://github.com/boonhapus/hautomate/example/custom_components/README.md
 """
 import logging
 
-import hautomate
+# import hautomate
 
 
 _LOGGER = logging.getLogger(__name__)

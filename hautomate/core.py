@@ -59,7 +59,7 @@ class HAutomate:
             await intent(ctx)
         except asyncio.CancelledError:
             _log.error(f'intent {intent} cancelled!')
-        except Exception as exc:
+        except Exception:
             _log.exception(f'intent {intent} errored!')
             # if hasattr(intent.parent, 'on_intent_error'):
             #     await intent.parent.on_intent_error(ctx, error=exc)

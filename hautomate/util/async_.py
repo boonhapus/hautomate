@@ -67,6 +67,14 @@ class Asyncable:
             )
 
     def __call_threadsafe__(self, main_loop: asyncio.AbstractEventLoop, *a, **kw):
+        """
+        Threadsafe version of __call__.
+
+        The only time this method will be invoked is when synchronous
+        code calls an Asyncable from another thread. This will not
+        return an awaitable like __call__, but instead return the result
+        of that awaitable instead.
+        """
         if self.concurrency == 'safe_sync':
             async def _wrapped(func, *a, **kw):
                 return func(*a, **kw)

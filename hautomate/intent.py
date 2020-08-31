@@ -42,6 +42,10 @@ class Intent(Asyncable):
         return True
 
     async def __runner__(self, ctx: Context, *a, **kw):
+        """
+        Akin to __call__, but used in an async context and tracks
+        statistics on the Intent itself.
+        """
         self.runs += 1
         self.last_ran = ctx.hauto.now
         r = await super().__call__(ctx, *a, loop=ctx.hauto.loop, **kw)

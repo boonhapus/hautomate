@@ -3,6 +3,9 @@ import itertools as it
 
 import pendulum
 
+from hautomate.intent import Intent
+from hautomate import HAutomate
+
 
 _context_id = it.count()
 
@@ -10,6 +13,9 @@ _context_id = it.count()
 class Context:
     """
     Execution context under which an Intent is fired.
+
+    Contexts hold a lot of relevant information as to why a specific intent was
+    triggered.
     """
     def __init__(
         self,

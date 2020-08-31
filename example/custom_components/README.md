@@ -9,5 +9,5 @@ accessible by the Home Assistant instance! In your configuration of
 
 ## Installation
 
-1. Ensure you have a `custom_components/` directory in your config directory.
-2. Lorem ipsum..
+ 1. Ensure you have a `custom_components/` directory in your config directory.
+ 2. Lorem ipsum..
