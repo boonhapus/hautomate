@@ -7,8 +7,8 @@
 </div>
 
 <p align="center">
-  <a href="hatumate.boonhap.us">
-    <img width="350" height="208" src="./docs/img/logo" alt='hautomate'>
+  <a href="hautomate.boonhap.us">
+    <img width="350" height="208" src="./docs/img/logo.png" alt='hautomate'>
   </a>
 </p>
 
