@@ -3,9 +3,6 @@ import itertools as it
 
 import pendulum
 
-from hautomate.intent import Intent
-from hautomate import HAutomate
-
 
 _context_id = it.count()
 
