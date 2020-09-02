@@ -39,7 +39,7 @@ class HAutomate:
         """
         Get HAutomate's current time.
         """
-        return 'now'  # TODO
+        return pendulum.now()  # TODO - API
 
     #
 
@@ -167,6 +167,7 @@ class EventBus:
             'hauto': self.hauto,
             'event': event,
             # 'target': <filled below>,
+            'when': self.hauto.now,
             'parent': parent if parent is not None else self.hauto,
         }
 

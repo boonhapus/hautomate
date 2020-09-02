@@ -3,6 +3,7 @@ import itertools as it
 
 from hautomate.util.async_ import Asyncable
 from hautomate.context import Context
+from hautomate.check import Cooldown
 
 
 _intent_id = it.count()
@@ -16,10 +17,23 @@ class Intent(Asyncable):
     items similar to asyncio's Task, in that they hold an internal state
     and represent work that will be done in the future.
     """
-    def __init__(self, event: str, func: Callable, *, limit: int=-1):
+    def __init__(self, event: str, func: Callable, *, checks: list=None, limit: int=-1):
         super().__init__(func)
+
+        try:
+            existing_checks = func.__checks__
+        except AttributeError:
+            existing_checks = []
+        finally:
+            all_checks = [*existing_checks, *(checks or [])]
+            checks = [c for c in all_checks if not isinstance(c, Cooldown)]
+            cooldown = next((c for c in all_checks if isinstance(c, Cooldown)), None)
+
         self._id = next(_intent_id)
         self.event = event
+        # self._app = app
+        self.checks = checks
+        self.cooldown = cooldown
         self.limit = limit
 
         # internal statistics
@@ -33,8 +47,8 @@ class Intent(Asyncable):
         if self.runs >= self.limit > 0:
             return False
 
-        # if self.checks is None:
-        #     return True
+        if self.checks is None:
+            return True
 
         # if not await self._run_all_checks(ctx, *a, **kw):
         #     return False
@@ -48,8 +62,7 @@ class Intent(Asyncable):
         """
         self.runs += 1
         self.last_ran = ctx.hauto.now
-        r = await super().__call__(ctx, *a, loop=ctx.hauto.loop, **kw)
-        return r
+        return await super().__call__(ctx, *a, loop=ctx.hauto.loop, **kw)
 
     __call__ = __runner__
 
