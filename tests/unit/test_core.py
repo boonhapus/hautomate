@@ -92,7 +92,7 @@ async def _(cfg=cfg_hauto):
         """
         nonlocal i
         i += 1
-        await asyncio.sleep(i * 0.01)
+        await asyncio.sleep(i * 0.025)
 
     for _ in range(5):
         hauto.bus.subscribe('DUMMY', _dummy)
