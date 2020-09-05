@@ -2,7 +2,7 @@ from typing import Callable
 
 import pendulum
 
-from hautomate.util.async_ import Asyncable
+from hautomate.util.async_ import Asyncable, safe_sync
 from hautomate.context import Context
 
 
@@ -11,8 +11,9 @@ class Check(Asyncable):
     A non-descript constaint.
 
     The callable which is passed during instantiation is executed prior
-    to  calling an Intent. The callable must return either True or
-    False, determining if the Intent is allowed to run.
+    to  calling an Intent. The callable's return value will be evaluated
+    as a bool, where True means the Intent is allowed to run, and false
+    or Exception denotes an Intent's inability to run.
 
     More complex logic is support via subclassing Check. The logic which
     determines Intent viability must then live under a magic method
@@ -30,17 +31,31 @@ class Check(Asyncable):
         super().__init__(func)
         self.name = name
 
-    def __call__(self, ctx: Context, *a, **kw):
+    def __call__(self, ctx: Context, *a, **kw) -> bool:
         return super().__call__(ctx, *a, loop=ctx.hauto.loop, **kw)
 
+    def __str__(self):
+        try:
+            self.__check__
+            f = '__check__'
+        except AttributeError:
+            f = self.func.__name__.strip('<').strip('>')
+
+        n = '' if self.name is None else f' "{self.name}"'
+        return f'<Check{n} {f}>'
+
     def __repr__(self):
-        if self.func == self.__check__:
-            f = '__check__ (complex)'
+        if hasattr(self, '__check__'):
+            f = '__check__'
         else:
             f = self.func
 
-        n = self.name
-        return f'<Check func={f}, name="{n}">'
+        s = f'<Check func={f}'
+
+        if self.name is not None:
+            s += f', name="{self.name}"'
+
+        return f'{s}>'
 
 
 # TODO:
@@ -92,6 +107,7 @@ class Cooldown(Check):
         self.tokens = min(self.tokens + new_tokens, self._max_tokens)
         self.last_seen = now
 
+    @safe_sync
     def __check__(self, ctx: Context, *args, **kwargs) -> bool:
         """
         Determine if the Intent can run.
