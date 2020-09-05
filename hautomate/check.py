@@ -108,7 +108,7 @@ class Cooldown(Check):
         self.last_seen = now
 
     @safe_sync
-    def __check__(self, ctx: Context, *args, **kwargs) -> bool:
+    def __check__(self, ctx: Context, *a, **kw) -> bool:
         """
         Determine if the Intent can run.
         """
