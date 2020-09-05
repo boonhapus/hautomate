@@ -8,6 +8,14 @@ import logging
 _log = logging.getLogger(__name__)
 
 
+def safe_sync(f: Callable) -> Callable:
+    """
+    Mark a func as safe to run within the event loop.
+    """
+    f.safe_sync = True
+    return f
+
+
 def is_main_thread() -> bool:
     """
     Check if we are in the main thread.

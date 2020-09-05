@@ -4,7 +4,12 @@ import asyncio
 
 from ward import test, each, raises
 
-from hautomate.util.async_ import is_main_thread, determine_concurrency, Asyncable
+from hautomate.util.async_ import (
+    Asyncable,
+    determine_concurrency,
+    is_main_thread,
+    safe_sync
+)
 
 
 def _dummy_fn():
@@ -26,7 +31,7 @@ _CONCURRENCY = ('safe_sync', 'potentially_unsafe_sync', 'potentially_unsafe_sync
 _TRIAL = (lambda: 1, _dummy_fn, _dummy_cls(), _dummy_afn, ft.partial(_dummy_afn), _dummy_afn(), 1)
 
 
-@test('is_main_thread identifies [non]-main threads', tags=['unit'])
+@test('is_main_thread identifies [non-]main threads', tags=['unit'])
 def _():
     with fs.ThreadPoolExecutor() as ex:
         f = ex.submit(is_main_thread)
@@ -77,3 +82,9 @@ async def _(name=each(*_NAME[:-2]), concurrency=each(*_CONCURRENCY[:-2]), trial=
             await asyncio.sleep(0)
 
         assert f.result() == 1
+
+
+@test('safe_sync() adds attribute .safe_sync')
+def _():
+    assert hasattr(_dummy_fn, 'safe_sync') is False
+    assert hasattr(safe_sync(_dummy_fn), 'safe_sync') is True
