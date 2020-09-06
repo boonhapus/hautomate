@@ -1,5 +1,4 @@
 import asyncio
-import random
 
 from ward import test, each, raises, fixture
 import pendulum
@@ -121,13 +120,7 @@ async def _(
 
 
 @test('{cd} debounces initial calls within {cd.wait}s')
-async def _(
-    ctx=ctx,
-    cd=each(
-        Debounce(0.15, edge='LEADING'),
-        Debounce(0.25, edge='LEADING'),
-    )
-):
+async def _(ctx=ctx, cd=Debounce(0.25, edge='LEADING')):
     old_ctx = ctx.asdict()
     old_ctx.pop('when')
 
@@ -156,13 +149,7 @@ async def _(
 
 
 @test('{cd} debounces successive calls for {cd.wait}s')
-async def _(
-    ctx=ctx,
-    cd=each(
-        Debounce(0.15, edge='TRAILING'),
-        Debounce(0.25, edge='TRAILING')
-    )
-):
+async def _(ctx=ctx, cd=Debounce(0.25, edge='TRAILING')):
     old_ctx = ctx.asdict()
     old_ctx.pop('when')
 

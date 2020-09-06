@@ -92,7 +92,7 @@ async def _(cfg=cfg_hauto):
         """
         nonlocal i
         i += 1
-        await asyncio.sleep(i * 0.025)
+        await asyncio.sleep(i * 0.1)
 
     for _ in range(5):
         hauto.bus.subscribe('DUMMY', _dummy)
@@ -102,7 +102,7 @@ async def _(cfg=cfg_hauto):
     assert len(todo) == 5
 
     done, todo = await hauto.bus.fire('DUMMY', parent='ward', wait='FIRST_COMPLETED')
-    assert len(done) < len(todo)
+    assert len(done) <= len(todo)
 
     done, todo = await hauto.bus.fire('DUMMY', parent='ward', wait='ALL_COMPLETED')
     assert len(done) == 5
