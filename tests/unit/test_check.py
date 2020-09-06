@@ -124,7 +124,7 @@ async def _(
 async def _(
     ctx=ctx,
     cd=each(
-        Debounce(0.10, edge='LEADING'),
+        Debounce(0.15, edge='LEADING'),
         Debounce(0.25, edge='LEADING'),
     )
 ):
@@ -159,7 +159,7 @@ async def _(
 async def _(
     ctx=ctx,
     cd=each(
-        Debounce(0.10, edge='TRAILING'),
+        Debounce(0.15, edge='TRAILING'),
         Debounce(0.25, edge='TRAILING')
     )
 ):
