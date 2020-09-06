@@ -53,3 +53,13 @@ class Context:
         Datetime when the Context was created.
         """
         return pendulum.from_timestamp(self._created_ts, tz='UTC')#.in_timezone(self.hauto.config.timezone)
+
+    def asdict(self):
+        d = {
+            'hauto': self.hauto,
+            'event': self.event,
+            'target': self.target,
+            'when': self.when,
+            'parent': self.parent,
+        }
+        return d
