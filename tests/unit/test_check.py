@@ -5,7 +5,10 @@ import pendulum
 
 from hautomate.context import Context
 from hautomate.errors import HautoException, CheckError
-from hautomate.check import Check, Cooldown, Throttle, Debounce
+from hautomate.check import (
+    Check, Cooldown, Throttle, Debounce,
+    check, throttle, debounce
+)
 from hautomate import HAutomate
 
 from tests.fixtures import cfg_hauto
@@ -175,3 +178,20 @@ async def _(ctx=ctx, cd=Debounce(0.25, edge='TRAILING')):
     ctx = Context(**old_ctx, when=pendulum.now(tz='UTC'))
     r = await cd(ctx)
     assert r is True
+
+
+@test('check-as-decorators are applied to the underlying function')
+def _():
+    decos = [
+        check(lambda ctx: True, name='general_check'),
+        debounce(wait=1.0, edge='trailing'),
+        debounce(wait=1.0, edge='leading'),
+        throttle(tokens=1, seconds=1.0)
+    ]
+
+    for deco in decos:
+        user_fn = lambda ctx: 1
+        assert hasattr(user_fn, '__checks__') is False
+        wrapped = deco(user_fn)
+        assert hasattr(user_fn, '__checks__') is True
+        assert wrapped('CONTEXT') == 1
