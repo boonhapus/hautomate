@@ -32,14 +32,26 @@ class Intent(Asyncable):
 
         self._id = next(_intent_id)
         self.event = event
-        # self._app = app
         self.checks = checks
         self.cooldown = cooldown
         self.limit = limit
+        self._app = None
 
         # internal statistics
         self.runs = 0
         self.last_ran = None
+
+        # binding to an app
+        if hasattr(self.func, '__self__'):
+            self._bind(self.func)
+
+    def _bind(self, method: Callable) -> None:
+        """
+        Replace a class's function with a bound method.
+        """
+        self.func = method
+        self._app = method.__self__
+        self._app._intents.append(self)
 
     async def can_run(self, ctx: Context, *a, **kw) -> bool:
         """
@@ -48,7 +60,7 @@ class Intent(Asyncable):
         if self.runs >= self.limit > 0:
             return False
 
-        if not await self._all_checks_pass(ctx, *a, **kw):
+        if not await self._all_checks_pass(ctx):
             return False
 
         return True
