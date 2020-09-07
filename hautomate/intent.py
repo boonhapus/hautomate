@@ -1,5 +1,6 @@
 from typing import Callable
 import itertools as it
+import asyncio
 
 from hautomate.util.async_ import Asyncable
 from hautomate.context import Context
@@ -47,11 +48,27 @@ class Intent(Asyncable):
         if self.runs >= self.limit > 0:
             return False
 
-        if self.checks is None:
-            return True
+        if not await self._all_checks_pass(ctx, *a, **kw):
+            return False
 
-        # if not await self._run_all_checks(ctx, *a, **kw):
-        #     return False
+        return True
+
+    async def _all_checks_pass(self, ctx: Context) -> bool:
+        """
+        Determine if this Intent passes its checks.
+
+        The list of checks is scheduled concurrently, but evaluated
+        eagerly. This allows the Intent to fail fast in case of a long
+        line of checks. Only once all checks have passed, the cooldown
+        is evaluated - which keeps the cooldown from being evaluated if
+        the Intent isn't meant to run in the first place.
+        """
+        for coro in asyncio.as_completed([chk(ctx) for chk in self.checks]):
+            if not await coro:
+                return False
+
+        if self.cooldown is not None and not await self.cooldown(ctx):
+            return False
 
         return True
 
