@@ -172,7 +172,7 @@ class Throttle(Cooldown):
     tokens : int = 1.0
         number of allowable requests within a period
     """
-    def __init__(self, seconds: float=1.0, *, max_tokens: float=1.0):
+    def __init__(self, seconds: int=1.0, *, max_tokens: float=1.0):
         super().__init__()
         self._seconds = seconds
         self._max_tokens = max_tokens
@@ -220,63 +220,65 @@ class Throttle(Cooldown):
         return f'Throttle({s}, max_tokens={t})'
 
 
-# def check(
-#     predicate: Callable,
-#     *,
-#     name: str=None,
-# ) -> Check:
-#     """
-#     Add a constraint to an Intent.
+def check(predicate: [Callable, Check], *, name: str=None) -> Check:
+    """
+    Add a constraint to an Intent.
 
-#     This method is used as a decorator.
-#     """
-#     if isinstance(predicate, Check):
-#         _check = predicate
-#     else:
-#         _check = Check(predicate, name=name)
+    This method is used as a decorator.
 
-#     def _wrapper(fn):
-#         try:
-#             fn.__checks__.append(_check)
-#         except AttributeError:
-#             fn.__checks__ = [_check]
-#         return fn
+    Parameters
+    ----------
+    predicate : Callable
+        constraint to test
 
-#     return _wrapper
+    name : str = None
+        name of the resulting Check
+    """
+    if isinstance(predicate, Check):
+        _check = predicate
+    else:
+        _check = Check(predicate, name=name)
+
+    def _wrapper(fn):
+        try:
+            fn.__checks__.append(_check)
+        except AttributeError:
+            fn.__checks__ = [_check]
+
+        return fn
+
+    return _wrapper
 
 
-# def cooldown(
-#     *,
-#     seconds: int=0,
-#     minutes: int=0,
-#     hours: int=0,
-#     days: int=0,
-#     weeks: int=0
-# ) -> Cooldown:
-#     """
-#     Add a cooldown to an Intent.
+def debounce(*, wait: float, edge: str='TRAILING') -> Debounce:
+    """
+    Add a Debounce to an Intent.
 
-#     This method is used as a decorator.
+    This method is used as a decorator.
 
-#     Parameters
-#     ----------
-#     seconds : int
-#     minutes : int
-#     hours : int
-#     days : int
-#     weeks : int
-#     """
-#     seconds = (
-#           seconds
-#         + minutes *     60
-#         + hours   *   3600
-#         + days    *  86400
-#         + weeks   * 604800
-#     )
+    Parameters
+    ----------
+    wait : float
+        amount of time in seconds to debounce
 
-#     if seconds == 0:
-#         raise ValueError(
-#             'must specify one or more of: seconds, minutes, hours, days, weeks'
-#         )
+    edge : str = 'TRAILING'
+        either LEADING or TRAILING
+    """
+    return check(Debounce(wait, edge=edge))
 
-#     return check(Cooldown(seconds))
+
+def throttle(*, tokens: int=1, seconds: float=1.0) -> Throttle:
+    """
+    Add a Throttler to an Intent.
+
+    This method is used as a decorator.
+
+    Parameters
+    ----------
+    tokens : int = 1
+        number of allowable requests within a period
+
+    seconds : float = 1.0
+        number of seconds between period resets
+    """
+    return check(Throttle(seconds, max_tokens=tokens))
