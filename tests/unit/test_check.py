@@ -4,7 +4,7 @@ from ward import test, each, raises, fixture
 import pendulum
 
 from hautomate.context import Context
-from hautomate.errors import HautoException, CheckError
+from hautomate.errors import HautoException
 from hautomate.check import (
     Check, Cooldown, Throttle, Debounce,
     check, throttle, debounce
@@ -41,7 +41,7 @@ _TRIALS = {
         Throttle()
     ),
     'good_errors': (
-        Check(raise_exc(CheckError)),
+        Check(raise_exc(HautoException)),
     ),
     'bad_errors': (
         Check(lambda ctx: 1 / 0, name='DivByZeroCheck'),
@@ -57,6 +57,7 @@ def hauto(cfg=cfg_hauto):
 @fixture(scope='module')
 def ctx(hauto=hauto):
     data = {
+        'event_data': {},
         'target': 'Intent',
         'parent': 'ward.test',
         'when': pendulum.now(tz='UTC')
@@ -73,7 +74,7 @@ async def _(ctx=ctx, check=each(*_TRIALS['passes'])):
 
 @test('{check} can only raise CheckErrors [good errors]', tags=['async', 'unit'])
 async def _(ctx=ctx, check=each(*_TRIALS['good_errors'])):
-    with raises(CheckError):
+    with raises(HautoException):
         await check(ctx)
 
 

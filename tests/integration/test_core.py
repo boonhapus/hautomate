@@ -18,7 +18,9 @@ async def _(cfg=cfg_hauto):
     hauto = HAutomate(cfg)
     assert hauto._state == CoreState.initialized
 
-    hauto.bus.subscribe('DUMMY', lambda *a, **kw: None)
+    # simulate some intents
+    hauto.bus.subscribe('DUMMY', lambda ctx: None)
+    hauto.bus.subscribe('INTENT_START', lambda ctx: None)
 
     # queue up some processing
     coros = [
