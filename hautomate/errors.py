@@ -6,7 +6,7 @@ class HautoException(Exception):
     """
 
 
-class CheckError(Exception):
-    """
-    Raise when a Check fails.
-    """
+# class CheckError(Exception):
+#     """
+#     Raise when a Check fails.
+#     """
