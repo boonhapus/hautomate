@@ -9,11 +9,18 @@ import pendulum
 from .settings import HautoConfig
 from .context import Context
 from .intent import Intent
-from .events import _EVT_INIT, EVT_START, EVT_READY, EVT_CLOSE
+from .events import (
+    _EVT_INIT, EVT_START, EVT_READY, EVT_CLOSE, EVT_APP_LOAD, EVT_APP_UNLOAD,
+    EVT_INTENT_SUBSCRIBE, EVT_INTENT_START, EVT_INTENT_END
+)
 from .enums import CoreState
 
 
 _log = logging.getLogger(__name__)
+_META_INTENTS = (
+    _EVT_INIT, EVT_APP_LOAD, EVT_APP_UNLOAD,
+    EVT_INTENT_SUBSCRIBE, EVT_INTENT_START, EVT_INTENT_END
+)
 
 
 class HAutomate:
@@ -24,8 +31,16 @@ class HAutomate:
         self.loop = loop or asyncio.get_event_loop()
         self.config = config
         self.bus = EventBus(self)
+        # self.apps = AppRegistry(self)
         self._stopped = asyncio.Event(loop=self.loop)
         self._state = CoreState.initialized
+
+    @property
+    def is_ready(self):
+        """
+        Determine whether or not HAutomate is ready.
+        """
+        return self._state == CoreState.ready
 
     @property
     def is_running(self) -> bool:
@@ -53,7 +68,8 @@ class HAutomate:
         if not await intent.can_run(ctx):
             return
 
-        # await self.bus.fire(EVT_INTENT_START)
+        if ctx.event not in _META_INTENTS:
+            await self.bus.fire(EVT_INTENT_START, parent=self, wait='ALL_COMPLETED')
 
         try:
             await intent(ctx)
@@ -63,8 +79,10 @@ class HAutomate:
             _log.exception(f'intent {intent} errored!')
             # if hasattr(intent.parent, 'on_intent_error'):
             #     await intent.parent.on_intent_error(ctx, error=exc)
-        # finally:
-        #     await self.bus.fire(EVT_INTENT_END)
+        finally:
+
+            if ctx.event not in _META_INTENTS:
+                await self.bus.fire(EVT_INTENT_END, parent=self, wait='ALL_COMPLETED')
 
     #
 
@@ -139,7 +157,14 @@ class EventBus:
         self._events[intent.event].append(intent)
         return intent
 
-    async def fire(self, event: str, *, parent: Union[Intent, HAutomate], wait: str=None):
+    async def fire(
+        self,
+        event: str,
+        *,
+        parent: Union[Intent, HAutomate],
+        wait: str=None,
+        **event_data
+    ):
         """
         Fire an event at the registry.
 
@@ -166,6 +191,7 @@ class EventBus:
         ctx_data = {
             'hauto': self.hauto,
             'event': event,
+            'event_data': event_data,
             # 'target': <filled below>,
             'when': self.hauto.now,
             'parent': parent if parent is not None else self.hauto,

@@ -19,6 +19,7 @@ class Context:
         hauto: 'HAutomate',
         event: str,
         *,
+        event_data: dict,
         target: 'Intent',
         when: pendulum.DateTime,
         parent: Union['Intent', 'HAutomate']
@@ -26,6 +27,7 @@ class Context:
         self._id = next(_context_id)
         self._hauto = hauto
         self.event = event
+        self.event_data = event_data
         self.target = target
         self.parent = parent
         self._when_ts = when.in_timezone('UTC').timestamp()
@@ -58,6 +60,7 @@ class Context:
         d = {
             'hauto': self.hauto,
             'event': self.event,
+            'event_data': self.event_data,
             'target': self.target,
             'when': self.when,
             'parent': self.parent,
