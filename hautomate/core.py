@@ -6,18 +6,19 @@ import logging
 
 import pendulum
 
-from .settings import HautoConfig
-from .context import Context
-from .intent import Intent
-from .events import (
+from hautomate.settings import HautoConfig
+from hautomate.context import Context
+from hautomate.intent import Intent
+from hautomate.events import (
     _EVT_INIT, EVT_START, EVT_READY, EVT_CLOSE, EVT_APP_LOAD, EVT_APP_UNLOAD,
     EVT_INTENT_SUBSCRIBE, EVT_INTENT_START, EVT_INTENT_END
 )
-from .enums import CoreState
+from hautomate.enums import CoreState
+from hautomate.app import AppRegistry
 
 
 _log = logging.getLogger(__name__)
-_META_INTENTS = (
+_META_EVENTS = (
     _EVT_INIT, EVT_APP_LOAD, EVT_APP_UNLOAD,
     EVT_INTENT_SUBSCRIBE, EVT_INTENT_START, EVT_INTENT_END
 )
@@ -31,7 +32,7 @@ class HAutomate:
         self.loop = loop or asyncio.get_event_loop()
         self.config = config
         self.bus = EventBus(self)
-        # self.apps = AppRegistry(self)
+        self.apps = AppRegistry(self)
         self._stopped = asyncio.Event(loop=self.loop)
         self._state = CoreState.initialized
 
@@ -68,7 +69,8 @@ class HAutomate:
         if not await intent.can_run(ctx):
             return
 
-        if ctx.event not in _META_INTENTS:
+        # don't fire meta events during startup/shutdown
+        if ctx.event not in _META_EVENTS and self.is_ready:
             await self.bus.fire(EVT_INTENT_START, parent=self, wait='ALL_COMPLETED')
 
         try:
@@ -81,7 +83,8 @@ class HAutomate:
             #     await intent.parent.on_intent_error(ctx, error=exc)
         finally:
 
-            if ctx.event not in _META_INTENTS:
+            # don't fire meta events during startup/shutdown
+            if ctx.event not in _META_EVENTS and self.is_ready:
                 await self.bus.fire(EVT_INTENT_END, parent=self, wait='ALL_COMPLETED')
 
     #
