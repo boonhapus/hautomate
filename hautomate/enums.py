@@ -12,5 +12,10 @@ class CoreState(enum.Enum):
     stopped = 'STOPPED'
     finished = 'FINISHED'
 
-    # def __str__(self) -> str:
-    #     return self.value
+
+class IntentState(enum.Enum):
+    """
+    Represent the current state of an Intent.
+    """
+    initialized = 'INITIALIZED'
+    cancelled = 'CANCELLED'

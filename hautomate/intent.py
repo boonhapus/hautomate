@@ -4,6 +4,7 @@ import asyncio
 
 from hautomate.util.async_ import Asyncable
 from hautomate.context import Context
+from hautomate.enums import IntentState
 from hautomate.check import Cooldown
 
 
@@ -36,6 +37,7 @@ class Intent(Asyncable):
         self.cooldown = cooldown
         self.limit = limit
         self._app = None
+        self._state = IntentState.initialized
 
         # internal statistics
         self.runs = 0
@@ -58,6 +60,9 @@ class Intent(Asyncable):
         Determine if the intent can run.
         """
         if self.runs >= self.limit > 0:
+            return False
+
+        if self._state == IntentState.cancelled:
             return False
 
         if not await self._all_checks_pass(ctx):
