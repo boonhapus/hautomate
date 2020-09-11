@@ -8,7 +8,7 @@ import logging
 import pathlib
 import sys
 
-from hautomate.errors import HAutomateException
+from hautomate.errors import HautoError
 from hautomate.events import EVT_APP_LOAD, EVT_APP_UNLOAD
 
 
@@ -52,13 +52,19 @@ class AppRegistry:
         """
         return self._apps.copy()
 
-    # Allow AppRegistry to behave as a dict-like
+    # Allow AppRegistry to behave as a dict-like object
+
+    def __len__(self):
+        return len(self._apps)
+
+    def __iter__(self):
+        return iter(self.apps.values())
 
     def __getitem__(self, key: str) -> App:
         try:
             app = self._apps[key]
         except KeyError:
-            raise HAutomateException(f"app '{key}' has not been registered!")
+            raise HautoError(f"app '{key}' has not been registered!")
 
         return app
 
@@ -68,17 +74,14 @@ class AppRegistry:
         """
         return self.apps.items()
 
-    def keys(self):
+    def names(self) -> iter:
         """
         Return an iterable of app-names.
         """
-        return self.apps.keys()
+        return iter(self.apps.keys())
 
-    def values(self):
-        """
-        Return an iterable of apps.
-        """
-        return self.apps.values()
+    keys = names
+    values = __iter__
 
     #
 
@@ -91,6 +94,7 @@ class AppRegistry:
               iteration of the iterdir loop.
         """
         for fp in self.apps_dir.iterdir():
+            # ignore __init__.py, __pycache__/, etc
             if fp.stem.startswith('__'):
                 continue
 
@@ -102,44 +106,12 @@ class AppRegistry:
 
             self.load_app(fp)
 
-    def load_app(self, fp: pathlib.Path) -> Dict[str, App]:
-        """
-        Add an app to the registry.
-        """
-        _log.debug(f'loading app from {fp}')
-
-        try:
-            module = self._load_module_from_file(fp)
-        except FileNotFoundError:
-            _log.error(f'{fp.name} does not exist')
-            return None
-
-        try:
-            apps = module.setup(self.hauto)
-        except AttributeError:
-            _log.warning(f"couldn't find a setup function for {fp}!")
-            return
-
-        if isinstance(apps, App):
-            apps = [apps]
-
-        for app in apps:
-            self.register(app.name, app)
-
-            # don't fire APP_LOAD during init/close process
-            if self.hauto.is_ready:
-                # TODO: decide if this should wait until children has finished
-                coro = self.fire(EVT_APP_LOAD, parent=self.hauto, app=app)
-                asyncio.create_task(coro)
-
-        return apps
-
-    def register(self, name: str, app: App) -> None:
+    def _register(self, name: str, app: App) -> None:
         """
         Register an app.
         """
         # n_intents = 0
-        self._active_apps[name] = app
+        self._apps[name] = app
 
         # register_listeners
         for name, meth in inspect.getmembers(app, inspect.ismethod):
@@ -160,6 +132,33 @@ class AppRegistry:
         #     f'with {n_intents} intents]'
         # )
 
+    def load_app(self, fp: pathlib.Path) -> None:
+        """
+        Add an app to the registry.
+        """
+        _log.debug(f'loading app from {fp}')
+
+        try:
+            module = self._load_module_from_file(fp)
+        except FileNotFoundError:
+            raise HautoError(f'{fp.name} does not exist')
+
+        try:
+            apps = module.setup(self.hauto)
+        except AttributeError:
+            _log.warning(f"couldn't find a setup function for {fp}!")
+            return
+
+        if isinstance(apps, App):
+            apps = [apps]
+
+        for app in apps:
+            self._register(app.name, app)
+
+            # TODO: decide if this should wait until children has finished
+            coro = self.hauto.bus.fire(EVT_APP_LOAD, parent=self.hauto, app=app)
+            asyncio.create_task(coro)
+
     def unload_app(self, name: str) -> None:
         """
         Remove an app from the registry.
@@ -170,20 +169,18 @@ class AppRegistry:
         _log.info(f"unloading app '{name}'")
 
         try:
-            app = self._active_apps.pop(name)
+            app = self._apps.pop(name)
         except KeyError:
-            raise HAutomateException(f"app '{name}' is not yet registered!")
+            raise HautoError(f"app '{name}' is not yet registered!")
 
-        try:
-            app.__module__.teardown(self.hauto)
-        except AttributeError:
-            pass
+        # try:
+        #     app.__module__.teardown(self.hauto)
+        # except AttributeError:
+        #     pass
 
-        # for intent in app.intents:
-        #     intent.cancel()
+        for intent in app.intents:
+            intent.cancel()
 
-        # don't fire APP_UNLOAD during init/close process
-        if self.hauto.is_ready:
-            # TODO: decide if this should wait until children has finished
-            coro = self.fire(EVT_APP_UNLOAD, parent=self.hauto, app=app)
-            asyncio.create_task(coro)
+        # TODO: decide if this should wait until children has finished
+        coro = self.hauto.bus.fire(EVT_APP_UNLOAD, parent=self.hauto, app=app)
+        asyncio.create_task(coro)

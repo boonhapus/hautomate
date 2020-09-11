@@ -1,6 +1,6 @@
 
 
-class HautoException(Exception):
+class HautoError(Exception):
     """
     Base exception for the HAutomate library.
     """

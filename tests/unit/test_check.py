@@ -4,7 +4,7 @@ from ward import test, each, raises, fixture
 import pendulum
 
 from hautomate.context import Context
-from hautomate.errors import HautoException
+from hautomate.errors import HautoError
 from hautomate.check import (
     Check, Cooldown, Throttle, Debounce,
     check, throttle, debounce
@@ -41,7 +41,7 @@ _TRIALS = {
         Throttle()
     ),
     'good_errors': (
-        Check(raise_exc(HautoException)),
+        Check(raise_exc(HautoError)),
     ),
     'bad_errors': (
         Check(lambda ctx: 1 / 0, name='DivByZeroCheck'),
@@ -74,7 +74,7 @@ async def _(ctx=ctx, check=each(*_TRIALS['passes'])):
 
 @test('{check} can only raise CheckErrors [good errors]', tags=['async', 'unit'])
 async def _(ctx=ctx, check=each(*_TRIALS['good_errors'])):
-    with raises(HautoException):
+    with raises(HautoError):
         await check(ctx)
 
 
@@ -86,7 +86,7 @@ async def _(ctx=ctx, check=each(*_TRIALS['bad_errors'])):
 
 @test('cant instantiate Cooldown directly')
 async def _():
-    with raises(HautoException):
+    with raises(HautoError):
         Cooldown()
 
 

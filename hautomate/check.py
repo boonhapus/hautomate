@@ -4,7 +4,7 @@ import asyncio
 import pendulum
 
 from hautomate.util.async_ import Asyncable, safe_sync
-from hautomate.errors import HautoException
+from hautomate.errors import HautoError
 from hautomate.context import Context
 
 
@@ -66,7 +66,7 @@ class Cooldown(Check):
     """
     def __init__(self, *a, **kw):
         if type(self) is Cooldown:
-            raise HautoException(
+            raise HautoError(
                 'the Cooldown class does nothing on its own, try using one of '
                 'the Throttle or Debounce classes instead!'
             )
