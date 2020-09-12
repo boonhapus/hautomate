@@ -17,6 +17,11 @@ class HautoConfig(Settings):
     """
     Validator to ensure proper Hautomate configuration.
 
+    apps_dir
+        may take the form of single-file apps, or a directory for the app, where the app
+        lives as a same-named file (aka /apps_dir/app_name/app_name.py). App files which
+        start with either a single- or double-underscore will be ignored.
+
     Tools:
       https://www.freemaptools.com/elevation-finder.htm
     """

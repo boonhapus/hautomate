@@ -42,18 +42,15 @@ async def _(cfg=cfg_hauto):
 @test('EventBus adds all callables as Intents', tags=['unit'])
 def _(cfg=cfg_hauto):
     hauto = HAutomate(cfg)
-    assert len(hauto.bus._events) == 0
 
     # with a naked callable
     intent = lambda ctx, *a, **kw: None
     hauto.bus.subscribe('DUMMY', intent)
-    assert len(hauto.bus._events) == 1
     assert len(hauto.bus._events['DUMMY']) == 1
 
     # with an Intent
     intent = Intent('DUMMY', lambda ctx, *a, **kw: None)
     hauto.bus.subscribe('DUMMY', intent)
-    assert len(hauto.bus._events) == 1
     assert len(hauto.bus._events['DUMMY']) == 2
 
     # assert all subscriptions are Intents
@@ -64,7 +61,6 @@ def _(cfg=cfg_hauto):
 @test('EventBus fires events to 0..N receivers', tags=['unit'])
 async def _(cfg=cfg_hauto):
     hauto = HAutomate(cfg)
-    assert len(hauto.bus._events) == 0
 
     for _ in range(5):
         hauto.bus.subscribe('DUMMY', lambda ctx, *a, **kw: None)

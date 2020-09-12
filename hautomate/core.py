@@ -115,14 +115,8 @@ class HAutomate:
         # 4a.       API_READY
         # 5 .       EVT_READY
         """
-        self._state = CoreState.starting
-
-        # We're doing I/O here .. but hey, who cares? No one's listening yet! :)
-        # self._load_apis()
-        # self.apps._initial_load_apps()
         self.loop.set_debug(debug)
-
-        # shh, this event is super secret!
+        self._state = CoreState.starting
         await self.bus.fire(_EVT_INIT, parent=self, wait='ALL_COMPLETED')
         await self.bus.fire(EVT_START, parent=self, wait='ALL_COMPLETED')
         self._state = CoreState.ready

@@ -1,49 +1,83 @@
+from collections.abc import Iterable
+
 from ward import test, raises
 
 from hautomate.errors import HautoError
+from hautomate.app import App
 from hautomate import HAutomate
 
 from tests.fixtures import cfg_hauto
 
 
-@test('AppRegistry implements len, .items, .names, dict-like member accessor')
+@test('AppRegistry implements __len__, __iter__, __getattr__, and .names')
 async def _(cfg=cfg_hauto):
+    """ async because we call loop.create_task upon AppRegistry.load(app) """
     hauto = HAutomate(cfg)
-    assert len(hauto.apps) == 0
+    hauto.apps._load_all_apps(None)
 
-    hauto.apps._initial_load_apps()
-    app_names = list(hauto.apps._apps.keys())
-    apps = list(hauto.apps._apps.values())
-    assert len(app_names) == 2
+    assert len(hauto.apps) == 3
+    assert isinstance(hauto.apps, Iterable) is True
+    assert isinstance(hauto.apps.names, list) is True
 
-    for name, app in zip(app_names, apps):
-        assert hauto.apps[name] == app
+    for app_name, app in zip(hauto.apps.names, hauto.apps):
+        assert getattr(hauto.apps, app_name) == app
 
-    for v_app, i_app in zip(hauto.apps.values(), hauto.apps):
-        assert v_app == i_app
 
-    for k_name, name in zip(hauto.apps.keys(), hauto.apps.names()):
-        assert k_name == name
-
-    for i, (k, v) in enumerate(hauto.apps.items()):
-        assert k == app_names[i]
-        assert v == apps[i]
+@test('AppRegistry warns on no setup() method found')
+async def _(cfg=cfg_hauto):
+    """ async because we call loop.create_task upon AppRegistry.load(app) """
+    hauto = HAutomate(cfg)
 
     with raises(HautoError):
-        hauto.apps['nope']
+        hauto.apps._invalid_app
 
 
-@test('AppRegistry loads and unloads apps')
+@test('AppRegistry errors on non-loaded apps')
 async def _(cfg=cfg_hauto):
+    """ async because we call loop.create_task upon AppRegistry.load(app) """
     hauto = HAutomate(cfg)
 
-    for file_obj in hauto.config.apps_dir.iterdir():
-        if file_obj.is_file():
-            hauto.apps.load_app(file_obj)
+    # can't find app
+    with raises(HautoError):
+        hauto.apps.some_app_that_doesnt_actually_exist_ayy_lmao
 
-    assert len(hauto.apps) == 2
+    with raises(HautoError):
+        hauto.apps._hidden_app
 
-    for name in hauto.apps.names():
-        hauto.apps.unload_app(name)
 
-    assert len(hauto.apps) == 0
+@test('AppRegistry doesn\'t autoload private files')
+async def _(cfg=cfg_hauto):
+    """ async because we call loop.create_task upon AppRegistry.load(app) """
+    hauto = HAutomate(cfg)
+
+    # can't find app
+    with raises(HautoError):
+        hauto.apps.hidden
+
+    hauto.apps._load_all_apps(None)
+
+    # still can't find app!
+    with raises(HautoError):
+        hauto.apps.hidden
+
+    # ahhh finally
+    hauto.apps.load_app('_hidden_app')
+    assert isinstance(hauto.apps.hidden, App) is True
+
+
+@test('AppRegistry won\'t load two apps by the same name')
+async def _(cfg=cfg_hauto):
+    """ async because we call loop.create_task upon AppRegistry.load(app) """
+    hauto = HAutomate(cfg)
+    apps = hauto.apps.load_app('_hidden_app')
+
+    with raises(HautoError):
+        hauto.apps.load_app('_hidden_app')
+
+    for app in apps:
+        hauto.apps.unload_app(app.name)
+
+    with raises(HautoError):
+        hauto.apps.unload_app('hidden')
+
+    hauto.apps.load_app('_hidden_app')

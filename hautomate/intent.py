@@ -6,6 +6,7 @@ from hautomate.util.async_ import Asyncable
 from hautomate.context import Context
 from hautomate.enums import IntentState
 from hautomate.check import Cooldown
+from hautomate.app import App
 
 
 _intent_id = it.count()
@@ -44,7 +45,7 @@ class Intent(Asyncable):
         self.last_ran = None
 
         # binding to an app
-        if hasattr(self.func, '__self__'):
+        if hasattr(self.func, '__self__') and isinstance(self.func.__self__, App):
             self._bind(self.func)
 
     def _bind(self, method: Callable) -> None:
