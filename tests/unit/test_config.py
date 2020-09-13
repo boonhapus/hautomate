@@ -8,7 +8,7 @@ from hautomate.settings import HautoConfig
 from tests.fixtures import cfg_data_hauto
 
 
-@test('HAutoConfig', tags=['unit'])
+@test('HAutoConfig validates input', tags=['unit'])
 def _(opts=cfg_data_hauto):
     model = HautoConfig(**opts)
 

@@ -23,7 +23,7 @@ async def _(cfg=cfg_hauto):
         assert getattr(hauto.apps, app_name) == app
 
 
-@test('AppRegistry warns on no setup() method found')
+@test('AppRegistry warns when no setup() method found')
 async def _(cfg=cfg_hauto):
     """ async because we call loop.create_task upon AppRegistry.load(app) """
     hauto = HAutomate(cfg)
