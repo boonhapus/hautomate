@@ -14,6 +14,7 @@ from hautomate.events import (
     EVT_INTENT_SUBSCRIBE, EVT_INTENT_START, EVT_INTENT_END
 )
 from hautomate.enums import CoreState
+from hautomate.api import APIRegistry
 from hautomate.app import AppRegistry
 
 
@@ -32,6 +33,7 @@ class HAutomate:
         self.loop = loop or asyncio.get_event_loop()
         self.config = config
         self.bus = EventBus(self)
+        self.apis = APIRegistry(self)
         self.apps = AppRegistry(self)
         self._stopped = asyncio.Event(loop=self.loop)
         self._state = CoreState.initialized
@@ -107,13 +109,6 @@ class HAutomate:
     async def start(self, debug: bool=False):
         """
         Start Hautomate.
-
-        # 1 .     CORE CONFIG
-        # 2 .      API CONFIG
-        # 3 .      App CONFIG
-        # 4 .       EVT_START [undocumented for Apps, essentially for API use]
-        # 4a.       API_READY
-        # 5 .       EVT_READY
         """
         self.loop.set_debug(debug)
         self._state = CoreState.starting
