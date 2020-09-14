@@ -57,7 +57,10 @@ class HAutomate:
         """
         Get HAutomate's current time.
         """
-        return pendulum.now()  # TODO - API
+        if not self.is_ready:
+            return pendulum.now(self.config.timezone)
+
+        return self.apis['moment'].now
 
     #
 
