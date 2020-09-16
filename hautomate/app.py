@@ -17,7 +17,7 @@ _log = logging.getLogger(__name__)
 
 class App:
     """
-    A User's entrypoint into HAutomate.
+    Base class for a User's entrypoint into HAutomate.
 
     Parameters
     ----------
