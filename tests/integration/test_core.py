@@ -1,7 +1,8 @@
 import asyncio
 
-from ward import test, skip
+from ward import test
 
+from hautomate.events import EVT_READY
 from hautomate.enums import CoreState
 from hautomate import HAutomate
 
@@ -10,11 +11,6 @@ from tests.fixtures import cfg_hauto
 
 @test('HAutomate.start, .stop', tags=['integration', 'async'])
 async def _(cfg=cfg_hauto):
-
-    def _run_coro_soon(coro):
-        asyncio.create_task(coro)
-
-    loop = asyncio.get_event_loop()
     hauto = HAutomate(cfg)
     assert hauto._state == CoreState.initialized
 
@@ -22,25 +18,14 @@ async def _(cfg=cfg_hauto):
     hauto.bus.subscribe('DUMMY', lambda ctx: None)
     hauto.bus.subscribe('INTENT_START', lambda ctx: None)
 
-    # queue up some processing
-    coros = [
-        hauto.start(),
-        hauto.bus.fire('DUMMY', parent='ward.test'),
-        hauto.bus.fire('DUMMY_1', parent='ward.test'),
-        hauto.bus.fire('DUMMY_2', parent='ward.test')
-    ]
-
-    for coro in coros:
-        loop.call_soon(_run_coro_soon, coro)
-
-    # allow our queued tasks to begin
-    # TODO: impl hauto.api.triggered.wait_for(EVT)
-    await asyncio.sleep(1)
-
-    # we've started HAuto now
+    await hauto.start()
     assert hauto._state == CoreState.ready
     assert hauto._stopped.is_set() is False
     assert hauto.is_running is True
+
+    await hauto.bus.fire('DUMMY', parent='ward.tests')
+    asyncio.create_task(hauto.bus.fire('SOME_FOREIGN_EVENT', parent='ward.tests'))
+    await hauto.apis.trigger.wait_for('SOME_FOREIGN_EVENT')
 
     await hauto.stop()
     assert hauto._state == CoreState.stopped
@@ -48,13 +33,25 @@ async def _(cfg=cfg_hauto):
     assert hauto.is_running is False
 
 
-@skip('TBD: how to get this running without killing the event loop!')
 @test('HAutomate.run', tags=['integration', 'async'])
 def _(cfg=cfg_hauto):
-    hauto = HAutomate(cfg)
+    # explicitly get an event_loop so that we don't conflict with Ward
+    loop = asyncio.new_event_loop()
 
-    asyncio.run_coroutine_threadsafe(hauto.stop(), hauto.loop)
+    hauto = HAutomate(cfg, loop=loop)
+
+    async def _pipeline(ctx):
+        await hauto.apis.trigger.wait_for('SOME_FOREIGN_EVENT')
+        await hauto.stop()
+
+    coro = hauto.bus.fire('SOME_FOREIGN_EVENT', parent='ward.tests')
+    hauto.loop.call_later(0.5, asyncio.create_task, coro)
+    hauto.bus.subscribe(EVT_READY, _pipeline)
+
+    assert hauto._state == CoreState.initialized
+
     hauto.run()
+
     assert hauto._state == CoreState.stopped
     assert hauto._stopped.is_set() is True
     assert hauto.is_running is False
