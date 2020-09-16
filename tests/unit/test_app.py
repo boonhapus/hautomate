@@ -9,7 +9,7 @@ from hautomate import HAutomate
 from tests.fixtures import cfg_hauto
 
 
-@test('AppRegistry implements __len__, __iter__, __getattr__, and .names')
+@test('AppRegistry implements __len__, __iter__, __getattr__, and .names', tags=['unit'])
 async def _(cfg=cfg_hauto):
     """ async because we call loop.create_task upon AppRegistry.load(app) """
     hauto = HAutomate(cfg)
@@ -23,7 +23,7 @@ async def _(cfg=cfg_hauto):
         assert getattr(hauto.apps, app_name) == app
 
 
-@test('AppRegistry warns when no setup() method found')
+@test('AppRegistry warns when no setup() method found', tags=['unit'])
 async def _(cfg=cfg_hauto):
     """ async because we call loop.create_task upon AppRegistry.load(app) """
     hauto = HAutomate(cfg)
@@ -32,7 +32,7 @@ async def _(cfg=cfg_hauto):
         hauto.apps._invalid_app
 
 
-@test('AppRegistry errors on non-loaded apps')
+@test('AppRegistry errors on non-loaded apps', tags=['unit'])
 async def _(cfg=cfg_hauto):
     """ async because we call loop.create_task upon AppRegistry.load(app) """
     hauto = HAutomate(cfg)
@@ -45,7 +45,7 @@ async def _(cfg=cfg_hauto):
         hauto.apps._hidden_app
 
 
-@test('AppRegistry doesn\'t autoload private files')
+@test('AppRegistry doesn\'t autoload private files', tags=['unit'])
 async def _(cfg=cfg_hauto):
     """ async because we call loop.create_task upon AppRegistry.load(app) """
     hauto = HAutomate(cfg)
@@ -65,7 +65,7 @@ async def _(cfg=cfg_hauto):
     assert isinstance(hauto.apps.hidden, App) is True
 
 
-@test('AppRegistry won\'t load two apps by the same name')
+@test('AppRegistry won\'t load two apps by the same name', tags=['unit'])
 async def _(cfg=cfg_hauto):
     """ async because we call loop.create_task upon AppRegistry.load(app) """
     hauto = HAutomate(cfg)

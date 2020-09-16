@@ -9,7 +9,7 @@ from hautomate import HAutomate
 from tests.fixtures import cfg_hauto
 
 
-@test('HAutomate.start, .stop', tags=['integration', 'async'])
+@test('HAutomate.start, .stop', tags=['integration'])
 async def _(cfg=cfg_hauto):
     hauto = HAutomate(cfg)
     assert hauto._state == CoreState.initialized
@@ -33,7 +33,7 @@ async def _(cfg=cfg_hauto):
     assert hauto.is_running is False
 
 
-@test('HAutomate.run', tags=['integration', 'async'])
+@test('HAutomate.run', tags=['integration'])
 def _(cfg=cfg_hauto):
     # explicitly get an event_loop so that we don't conflict with Ward
     loop = asyncio.new_event_loop()

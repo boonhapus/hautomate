@@ -59,14 +59,14 @@ def _(name=each(*_NAME), concurrency=each(*_CONCURRENCY), trial=each(*_TRIAL)):
         r == concurrency
 
 
-@test('Asyncable runs from main thread: name={name}, concurrency={concurrency}', tags=['async', 'unit'])
+@test('Asyncable runs from main thread: name={name}, concurrency={concurrency}', tags=['unit'])
 async def _(name=each(*_NAME[:-2]), concurrency=each(*_CONCURRENCY[:-2]), trial=each(*_TRIAL[:-2])):
     awt = Asyncable(trial)
     r = await awt()
     assert r == 1
 
 
-@test('Asyncable runs from alternate thread: name={name}, concurrency={concurrency}', tags=['async', 'unit'])
+@test('Asyncable runs from alternate thread: name={name}, concurrency={concurrency}', tags=['unit'])
 async def _(name=each(*_NAME[:-2]), concurrency=each(*_CONCURRENCY[:-2]), trial=each(*_TRIAL[:-2])):
     loop = asyncio.get_event_loop()
 
@@ -84,7 +84,7 @@ async def _(name=each(*_NAME[:-2]), concurrency=each(*_CONCURRENCY[:-2]), trial=
         assert f.result() == 1
 
 
-@test('safe_sync() adds attribute .safe_sync')
+@test('safe_sync() adds attribute .safe_sync', tags=['unit'])
 def _():
     assert hasattr(_dummy_fn, 'safe_sync') is False
     assert hasattr(safe_sync(_dummy_fn), 'safe_sync') is True

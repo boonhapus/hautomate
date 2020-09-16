@@ -10,7 +10,7 @@ from hautomate import HAutomate
 from tests.fixtures import cfg_hauto
 
 
-@test('APIRegistry autosetup runs on builtin apis')
+@test('APIRegistry autosetup runs on builtin apis', tags=['unit'])
 def _(cfg=cfg_hauto):
     # overwrite any existing api configs
     cfg.api_configs = {}
@@ -20,12 +20,8 @@ def _(cfg=cfg_hauto):
     hauto.apis.trigger
     hauto.apis.moment
 
-    # from hautomate.api import API
-    # print(API._registry)
-    # assert 1 == 2
 
-
-@test('Moment API allows time travel: speed={speed}, epoch={epoch}')
+@test('Moment API allows time travel: speed={speed}, epoch={epoch}', tags=['unit'])
 async def _(
     cfg=cfg_hauto,
     speed=each(1.0, 2.0),
