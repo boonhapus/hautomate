@@ -1,3 +1,4 @@
+from typing import Any
 import importlib
 import logging
 import pathlib
@@ -12,7 +13,7 @@ from hautomate.events import _EVT_INIT
 _log = logging.getLogger(__name__)
 
 
-def _is_api(obj) -> bool:
+def _is_api(obj: Any) -> bool:
     """
     Determine if object in a module is an api.
     """
@@ -23,9 +24,14 @@ def _is_api(obj) -> bool:
 
 class API:
     """
-
+    Base class for APIs.
     """
+    _registry = {}
     _hauto = None
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        cls._registry[cls.__name__.lower()] = cls
 
     def __init__(self, hauto):
         self.hauto = hauto
@@ -42,6 +48,33 @@ class API:
     # def intents(self, intent):
     #     self._intents.append(intent)
 
+    async def fire(self, event: str, *, wait: str=None, **event_data):
+        """
+        Send a message over the event bus.
+
+        Parameters
+        ----------
+        event : str
+            name of the event to trigger Intents
+
+        data : dict
+            extra data to pass into matching Intents
+
+        return_when : str, default = ALL_FIRED
+            one of ALL_FIRED, FIRST_COMPLETED, FIRST_EXCEPTION, or ALL_COMPLETED
+
+        Returns
+        -------
+        tasks_or_results : List[Union[Task, Any]]
+        """
+        kwargs = {
+            'event': event,
+            'parent': self.name,
+            'wait': wait,
+            **event_data
+        }
+        return await self.hauto.bus.fire(**kwargs)
+
     # def __str__(self):
     #     return f'<API.{self.name}>'
 
@@ -51,7 +84,7 @@ class API:
 
 class APIRegistry:
     """
-
+    A registry and loader for all APIs living within HAutomate.
     """
     def __init__(self, hauto):
         self.hauto = hauto
@@ -62,40 +95,32 @@ class APIRegistry:
     @safe_sync
     def _load_all_apis(self, ctx: Context):
         """
-
+        An Intent which loads all APIs.
         """
-        # break the circular imports
-        from hautomate.apis import trigger, moment
-
-        # set up the built-in apis first
-        cfg = self.hauto.config.api_configs.get('moment', None)
-        data = cfg.dict() if cfg is not None else {}
-        self._apis['moment'] = moment(self.hauto, **data)
-        self._apis['trigger'] = trigger(self.hauto)
-
-        for path in (pathlib.Path(__file__).parent / 'apis').iterdir():
-            if (
-                path.stem.startswith('__')
-                or path.stem in ['trigger', 'moment']
-                or path.is_file()
-            ):
-                continue
-
-            # eg.    /apis/<homeassistant>/<homeassistant>.py
-            module = importlib.import_module(f'hautomate.apis.{path.stem}')
-            name, api_cls = next(iter(inspect.getmembers(module, _is_api)))
-
-            try:
-                cfg = self.hauto.config.api_configs[name]
-            except KeyError:
-                _log.info(f"couldn't find api configuration for '{name}', skipping")
-                continue
+        for name, api_cls in API._registry.items():
+            if name == 'trigger':
+                data = {}
+            elif name == 'moment':
+                cfg = self.hauto.config.api_configs.get('moment', None)
+                data = cfg.dict() if cfg is not None else {}
+            else:
+                try:
+                    cfg = self.hauto.config.api_configs[name]
+                except KeyError:
+                    _log.info(f"couldn't find api configuration for '{name}', skipping")
+                    continue
+                else:
+                    name = cfg.pop('name', name)
 
             _log.info(f"setting up api '{name}'")
-            name = cfg.pop('name', name)
-            self._apis[name] = api_cls(self.hauto, **cfg.dict())
+            self._apis[name] = api = api_cls(self.hauto, **data)
 
-    def __getitem__(self, name: str) -> API:
+            # register_listeners
+            for name, meth in inspect.getmembers(api, inspect.ismethod):
+                if name.startswith('on_'):
+                    self.hauto.bus.subscribe(name[3:].upper(), meth)
+
+    def __getattr__(self, name: str) -> API:
         try:
             return self._apis[name]
         except KeyError:
