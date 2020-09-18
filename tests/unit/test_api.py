@@ -1,10 +1,13 @@
 import asyncio
 import time
 
-from ward import test, each
+from ward import test, each, raises
 import pendulum
 
 from hautomate.apis.moment.settings import Config as MomentConfig
+from hautomate.apis.moment.events import EVT_TIME_SLIPPAGE
+from hautomate.util.async_ import safe_sync
+from hautomate.errors import HautoError
 from hautomate import HAutomate
 
 from tests.fixtures import cfg_hauto
@@ -17,8 +20,65 @@ def _(cfg=cfg_hauto):
 
     hauto = HAutomate(cfg)
     hauto.apis._load_all_apis(None)
-    hauto.apis.trigger
-    hauto.apis.moment
+    assert hauto.apis.trigger.name == 'trigger'
+    assert hauto.apis.moment.name == 'moment'
+
+    with raises(HautoError):
+        hauto.apis.some_obviously_not_included_api
+
+
+@test('APIs expose .fire(), ...', tags=['unit'])
+async def _(cfg=cfg_hauto):
+    hauto = HAutomate(cfg)
+    hauto.apis._load_all_apis(None)
+    counter = 0
+
+    async def _dummy(ctx):
+        nonlocal counter
+        counter += 1
+
+    hauto.bus.subscribe('SOME_EVENT', _dummy)
+    await hauto.apis.trigger.fire('SOME_EVENT', wait='ALL_COMPLETED')
+    assert counter == 1
+
+
+@test('Trigger API exposes waiters', tags=['unit'])
+async def _(cfg=cfg_hauto):
+    hauto = HAutomate(cfg)
+    await hauto.start()
+
+    # queue up a event fire and then wait on it
+    asyncio.create_task(hauto.bus.fire('SOME_EVENT', parent='ward.test'))
+    await hauto.apis.trigger.wait_for('SOME_EVENT')
+
+
+@test('Moment API notifies on event loop slippage', tags=['unit'])
+async def _(cfg=cfg_hauto):
+    hauto = HAutomate(cfg)
+
+    @safe_sync
+    def hanger(ctx):
+        """ this is totally not safe """
+        time.sleep(0.5)
+
+    hauto.bus.subscribe('SOME_EVENT', hanger)
+    await hauto.start()
+
+    # ensure we're not lagging
+    with raises(asyncio.TimeoutError):
+        coro = hauto.apis.trigger.wait_for(EVT_TIME_SLIPPAGE)
+        await asyncio.wait_for(coro, 1)
+
+    # induce the lag
+    asyncio.create_task(hauto.bus.fire('SOME_EVENT', parent='ward.test'))
+
+    try:
+        coro = hauto.apis.trigger.wait_for(EVT_TIME_SLIPPAGE)
+        await asyncio.wait_for(coro, 0.75)
+    except asyncio.TimeoutError:
+        assert 1 == 2, 'no slippage occurred!'
+
+    await hauto.stop()
 
 
 @test('Moment API allows time travel: speed={speed}, epoch={epoch}', tags=['unit'])
@@ -30,13 +90,7 @@ async def _(
     # overwrite any existing api configs
     cfg.api_configs = {'moment': MomentConfig(speed=speed, epoch=epoch)}
     hauto = HAutomate(cfg)
-
-    try:
-        task = asyncio.create_task(hauto.start())
-        coro = asyncio.shield(task)
-        await asyncio.wait_for(coro, 0.1)
-    except asyncio.TimeoutError:
-        pass
+    await hauto.start()
 
     real_beg = time.perf_counter()
     virt_beg = hauto.now
@@ -48,6 +102,4 @@ async def _(
     virt_elapsed = (virt_end - virt_beg).total_seconds()
 
     assert round(virt_elapsed / speed, 2) == round(real_elapsed, 2)
-
-    # cleanup
-    task.cancel()
+    assert hauto.apis.moment.scale_to_realtime(0.25 * speed) == 0.25
