@@ -65,32 +65,32 @@ def ctx(hauto=hauto):
     return Context(hauto, None, **data)
 
 
-@test('{check} evaluates as bool', tags=['async', 'unit'])
+@test('{check} evaluates as bool', tags=['unit'])
 async def _(ctx=ctx, check=each(*_TRIALS['passes'])):
     r = await check(ctx)
     r_bool = bool(r)
     assert r_bool in (True, False)
 
 
-@test('{check} can only raise CheckErrors [good errors]', tags=['async', 'unit'])
+@test('{check} can only raise CheckErrors [good errors]', tags=['unit'])
 async def _(ctx=ctx, check=each(*_TRIALS['good_errors'])):
     with raises(HautoError):
         await check(ctx)
 
 
-@test('{check} can only raise CheckErrors [bad errors]', tags=['async', 'unit'])
+@test('{check} can only raise CheckErrors [bad errors]', tags=['unit'])
 async def _(ctx=ctx, check=each(*_TRIALS['bad_errors'])):
     with raises(ZeroDivisionError):
         await check(ctx)
 
 
-@test('cant instantiate Cooldown directly')
+@test('cant instantiate Cooldown directly', tags=['unit'])
 async def _():
     with raises(HautoError):
         Cooldown()
 
 
-@test('{cd} throttles successive calls')
+@test('{cd} throttles successive calls', tags=['unit'])
 async def _(
     ctx=ctx,
     cd=each(
@@ -123,7 +123,7 @@ async def _(
     assert d >= cd.retry_after > 0
 
 
-@test('{cd} debounces initial calls within {cd.wait}s')
+@test('{cd} debounces initial calls within {cd.wait}s', tags=['unit'])
 async def _(ctx=ctx, cd=Debounce(0.25, edge='LEADING')):
     old_ctx = ctx.asdict()
     old_ctx.pop('when')
@@ -152,7 +152,7 @@ async def _(ctx=ctx, cd=Debounce(0.25, edge='LEADING')):
     assert r is True
 
 
-@test('{cd} debounces successive calls for {cd.wait}s')
+@test('{cd} debounces successive calls for {cd.wait}s', tags=['unit'])
 async def _(ctx=ctx, cd=Debounce(0.25, edge='TRAILING')):
     old_ctx = ctx.asdict()
     old_ctx.pop('when')
@@ -181,7 +181,7 @@ async def _(ctx=ctx, cd=Debounce(0.25, edge='TRAILING')):
     assert r is True
 
 
-@test('check-as-decorators are applied to the underlying function')
+@test('check-as-decorators are applied to the underlying function', tags=['unit'])
 def _():
     decos = [
         check(lambda ctx: True, name='general_check'),

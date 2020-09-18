@@ -2,7 +2,7 @@ from typing import List
 from types import ModuleType
 import importlib
 import asyncio
-# import inspect
+import inspect
 import logging
 import uuid
 
@@ -15,9 +15,57 @@ from hautomate.events import EVT_START, EVT_APP_LOAD, EVT_APP_UNLOAD
 _log = logging.getLogger(__name__)
 
 
+# class AppMeta(type):
+#     """
+#     Metaclass for an App.
+
+#     The metaclass exists for mostly a single reason. Users mess up. We
+#     want to be able to tell our users when and how they mess up. The
+#     metaclass inspects how an App was initialized and if the user missed
+#     a super().__init__(hauto), we inform them as much.
+#     """
+
+#     def formulate_signature(cls, ins, *a, **kw):
+#         from inspect import signature
+#         sig = signature(ins.__init__)
+
+#         try:
+#             bound = sig.bind(*a, **kw)
+#         except TypeError as exc:
+#             raise TypeError(exc) from None
+
+#         # need to determine appropriate signature
+#         # need to bind signature
+#         # need to extract hauto, args, kwargs
+
+#         return cls._hauto, bound.args, bound.kwargs
+
+#     def __call__(cls, *a, **kw):
+#         ins = cls.__new__(cls)
+
+#         if type(ins) == cls:
+#             hauto, args, kwargs = AppMeta.formulate_signature(cls, ins, *a, **kw)
+#             ins.__init__(*args, **kwargs)
+
+#             if not hasattr(ins, '_id'):
+#                 _log.warning(
+#                     f"oops! app {ins} did not call super().__init__(hauto)! please see "
+#                     f"<< docs link >> to ensure you're appropriately setting your apps "
+#                     f"up!"
+#                 )
+
+#                 ins._id = id_ = str(uuid.uuid4())[:8]
+#                 ins._hauto = hauto
+#                 ins._name = kwargs.pop('name', None) or f'{cls.__name__}_{id_}'
+#                 ins._intents = []
+
+#         return ins
+
+
+# class App(metaclass=AppMeta):  # TBD
 class App:
     """
-    A User's entrypoint into HAutomate.
+    Base class for a User's entrypoint into HAutomate.
 
     Parameters
     ----------
@@ -29,18 +77,28 @@ class App:
       if a name is not given, one will be generated for the app in order
       to distinguish it from other instances.
     """
+    _hauto = None
+
     def __init__(self, hauto, *, name: str=None):
         self._id = str(uuid.uuid4())[:8]
-        self.hauto = hauto
-        self.name = name or f'{self.__class__.__name__}_{self._id}'
-    #     self._intents = []
+        self._hauto = hauto
+        self._name = name or f'{self.__class__.__name__}_{self._id}'
+        self._intents = []
 
-    # @property
-    # def intents(self) -> List['Intent']:
-    #     """
-    #     All intents that were created by this app.
-    #     """
-    #     return self._intents
+    @property
+    def hauto(self):
+        return self._hauto
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def intents(self) -> List['Intent']:
+        """
+        All intents that were created by this app.
+        """
+        return self._intents
 
 
 class AppRegistry:
@@ -105,9 +163,9 @@ class AppRegistry:
         self._apps[name] = app
 
         # register_listeners
-        # for name, meth in inspect.getmembers(app, inspect.ismethod):
-        #     if name.startswith('on_'):
-        #         self.hauto.bus.subscribe(name[3:].upper(), meth)
+        for name, meth in inspect.getmembers(app, inspect.ismethod):
+            if name.startswith('on_'):
+                self.hauto.bus.subscribe(name[3:].upper(), meth)
 
         #     if hasattr(meth, '__intents__'):
         #         for intent in meth.__intents__:

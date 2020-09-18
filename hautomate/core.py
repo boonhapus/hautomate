@@ -11,9 +11,11 @@ from hautomate.context import Context
 from hautomate.intent import Intent
 from hautomate.events import (
     _EVT_INIT, EVT_START, EVT_READY, EVT_CLOSE, EVT_APP_LOAD, EVT_APP_UNLOAD,
-    EVT_INTENT_SUBSCRIBE, EVT_INTENT_START, EVT_INTENT_END
+    EVT_INTENT_SUBSCRIBE, EVT_INTENT_START, EVT_INTENT_END,
+    EVT_ANY
 )
 from hautomate.enums import CoreState
+from hautomate.api import APIRegistry
 from hautomate.app import AppRegistry
 
 
@@ -32,6 +34,7 @@ class HAutomate:
         self.loop = loop or asyncio.get_event_loop()
         self.config = config
         self.bus = EventBus(self)
+        self.apis = APIRegistry(self)
         self.apps = AppRegistry(self)
         self._stopped = asyncio.Event(loop=self.loop)
         self._state = CoreState.initialized
@@ -55,7 +58,10 @@ class HAutomate:
         """
         Get HAutomate's current time.
         """
-        return pendulum.now()  # TODO - API
+        if not self.is_ready:
+            return pendulum.now(self.config.timezone)
+
+        return self.apis.moment.now
 
     #
 
@@ -94,26 +100,15 @@ class HAutomate:
         Handle starting & proper cleanup of the event loop.
         """
         try:
-            asyncio.set_event_loop(self.loop)
-            self.loop.run_until_complete(self.start(debug))
+            self.loop.create_task(self.start())
+            self.loop.run_until_complete(self._stopped.wait())
         finally:
-            try:
-                asyncio.runners._cancel_all_tasks(self.loop)
-                self.loop.run_until_complete(self.loop.shutdown_asyncgens())
-            finally:
-                asyncio.set_event_loop(None)
-                self.loop.close()
+            self.loop.run_until_complete(self.loop.shutdown_asyncgens())
+            self.loop.close()
 
     async def start(self, debug: bool=False):
         """
         Start Hautomate.
-
-        # 1 .     CORE CONFIG
-        # 2 .      API CONFIG
-        # 3 .      App CONFIG
-        # 4 .       EVT_START [undocumented for Apps, essentially for API use]
-        # 4a.       API_READY
-        # 5 .       EVT_READY
         """
         self.loop.set_debug(debug)
         self._state = CoreState.starting
@@ -121,14 +116,13 @@ class HAutomate:
         await self.bus.fire(EVT_START, parent=self, wait='ALL_COMPLETED')
         self._state = CoreState.ready
         await self.bus.fire(EVT_READY, parent=self, wait='ALL_COMPLETED')
-        await self._stopped.wait()
 
     async def stop(self):
         """
         Stop Hautomate.
         """
         self._state = CoreState.closing
-        await self.bus.fire(EVT_CLOSE, parent=self)
+        await self.bus.fire(EVT_CLOSE, parent=self, wait='ALL_COMPLETED')
         self._state = CoreState.stopped
         self._stopped.set()
 
@@ -180,7 +174,7 @@ class EventBus:
         -------
         done, pending : set[Intents, ...]
         """
-        intents = set()
+        intents = set(self._events[EVT_ANY])
 
         if event in self._events:
             intents.update(self._events[event])
