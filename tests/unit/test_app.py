@@ -63,6 +63,7 @@ async def _(cfg=cfg_hauto):
     # ahhh finally
     hauto.apps.load_app('_hidden_app')
     assert isinstance(hauto.apps.hidden, App) is True
+    # hauto.apps.load_app('_naughty_app')
 
 
 @test('AppRegistry won\'t load two apps by the same name', tags=['unit'])
