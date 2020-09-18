@@ -13,32 +13,28 @@ from hautomate.events import _EVT_INIT
 _log = logging.getLogger(__name__)
 
 
-def _is_api(obj: Any) -> bool:
-    """
-    Determine if object in a module is an api.
-    """
-    if inspect.isclass(obj) and issubclass(obj, API):
-        return True
-    return False
-
-
 class API:
     """
     Base class for APIs.
     """
-    _registry = {}
-    _hauto = None
+    subclasses = {}
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, name: str=None, **kwargs):
         super().__init_subclass__(**kwargs)
-        cls._registry[cls.__name__.lower()] = cls
+        name = name or cls.__name__.lower()
+        cls.subclasses[name] = cls
+        cls.name = name
 
     def __init__(self, hauto):
-        self.hauto = hauto
+        self._hauto = hauto
         self._intents = []
 
-        if hauto is not None:
-            type(self)._hauto = hauto
+    @property
+    def hauto(self):
+        """
+        The HAutomate instance.
+        """
+        return self._hauto
 
     # @property
     # def intents(self):
@@ -97,7 +93,7 @@ class APIRegistry:
         """
         An Intent which loads all APIs.
         """
-        for name, api_cls in API._registry.items():
+        for name, api_cls in API.subclasses.items():
             if name == 'trigger':
                 data = {}
             elif name == 'moment':
@@ -109,8 +105,6 @@ class APIRegistry:
                 except KeyError:
                     _log.info(f"couldn't find api configuration for '{name}', skipping")
                     continue
-                else:
-                    name = cfg.pop('name', name)
 
             _log.info(f"setting up api '{name}'")
             self._apis[name] = api = api_cls(self.hauto, **data)

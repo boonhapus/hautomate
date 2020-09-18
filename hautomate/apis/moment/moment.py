@@ -64,14 +64,14 @@ class Moment(API):
         """
         Internal heartbeat to determine the health of HAutomate.
         """
-        while not self.hauto.is_ready:
+        while self.hauto.is_ready:
             asyncio.create_task(self.fire(EVT_TIME_UPDATE))
-            before = self.hauto.loop.time()
+            beg = self.hauto.loop.time()
             await asyncio.sleep(self.resolution)
-            after = self.hauto.loop.time()
-            lag = (after - before) - 1
+            end = self.hauto.loop.time()
+            lag = (end - beg)
 
-            if lag >= self.resolution:
+            if lag > (self.resolution + 0.1):
                 _log.warning(f'lag of {lag :.6f}s, {round(lag * 1000)}ms')
                 coro = self.fire(EVT_TIME_SLIPPAGE, lag=lag)
                 asyncio.create_task(coro)
