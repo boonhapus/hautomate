@@ -2,13 +2,15 @@ import collections
 import asyncio
 
 from hautomate.context import Context
-from hautomate.events import EVT_ANY
+from hautomate.events import _META_EVENTS, EVT_ANY
+from hautomate.intent import Intent
 from hautomate.api import API
+from hautomate.check import Check
 
 
 class Trigger(API):
     """
-
+    API for working with messages broadcast across the event bus.
     """
     def __init__(self, hauto):
         super().__init__(hauto)
@@ -20,23 +22,12 @@ class Trigger(API):
         """
         Called once HAutomate is ready to begin processing events.
         """
-        # self.on(EVT_ANY, method=self.on_almost_any_event)
-        from hautomate.intent import Intent
-        from hautomate.events import (
-            _EVT_INIT, EVT_APP_LOAD, EVT_APP_UNLOAD,
-            EVT_INTENT_SUBSCRIBE, EVT_INTENT_START, EVT_INTENT_END
-        )
-        from hautomate.check import Check
-
-        _META_EVENTS = (
-            _EVT_INIT, EVT_APP_LOAD, EVT_APP_UNLOAD,
-            EVT_INTENT_SUBSCRIBE, EVT_INTENT_START, EVT_INTENT_END
-        )
-
         check = Check(lambda ctx: ctx.event not in _META_EVENTS)
         intent = Intent(EVT_ANY, self.on_almost_any_event, checks=[check])
         self.hauto.bus.subscribe(EVT_ANY, intent)
+        # self.on(EVT_ANY, method=self.on_almost_any_event)
 
+    # @check(lambda ctx: ctx.event not in _META_EVENTS)
     async def on_almost_any_event(self, ctx: Context, *args, **kwargs):
         """
         Called on every event except TIME_UPDATE.

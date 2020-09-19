@@ -10,8 +10,8 @@ from hautomate.settings import HautoConfig
 from hautomate.context import Context
 from hautomate.intent import Intent
 from hautomate.events import (
-    _EVT_INIT, EVT_START, EVT_READY, EVT_CLOSE, EVT_APP_LOAD, EVT_APP_UNLOAD,
-    EVT_INTENT_SUBSCRIBE, EVT_INTENT_START, EVT_INTENT_END,
+    _META_EVENTS, _EVT_INIT, EVT_START, EVT_READY, EVT_CLOSE,
+    EVT_INTENT_START, EVT_INTENT_END,
     EVT_ANY
 )
 from hautomate.enums import CoreState
@@ -20,10 +20,6 @@ from hautomate.app import AppRegistry
 
 
 _log = logging.getLogger(__name__)
-_META_EVENTS = (
-    _EVT_INIT, EVT_APP_LOAD, EVT_APP_UNLOAD,
-    EVT_INTENT_SUBSCRIBE, EVT_INTENT_START, EVT_INTENT_END
-)
 
 
 class HAutomate:
