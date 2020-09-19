@@ -43,19 +43,28 @@ class Trigger(API):
 
     # PUBLIC METHODS
 
-    async def wait_for(self, event_name: str):
+    async def wait_for(self, event_name: str, *, timeout: float=None):
         """
         Block until the next time <event_name> is seen.
 
-        This method can be used to await any incoming event except TIME_UPDATE.
-        It is particularly handy when waiting for an outside (of HAutomate)
+        This method can be used to await any incoming event. It is
+        particularly handy when waiting for an outside (of HAutomate)
         event to be pushed into the platform.
         """
-        evt = event_name.upper()
+        evt = self._event_waiters[event_name.upper()]
+        await asyncio.wait_for(evt.wait(), timeout)
 
-        # TODO
-        #   optionally, we can extend this with a timeout param & asyncio.wait_for()
-        #
-        # evt = self._event_waiters[event_name]
-        # await asyncio.wait_for(evt.wait(), timeout)
-        await self._event_waiters[evt].wait()
+    # Intents
+
+    # @api_method
+    def on(self, event_name: str, *, method=None, **intent_kwargs) -> Intent:
+        """
+
+        trigger.on(some_event, method=lambda ctx: None)
+
+        @trigger.on(some_event)
+        """
+        if method is None:
+            pass
+
+        return Intent()

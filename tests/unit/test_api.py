@@ -8,9 +8,42 @@ from hautomate.apis.moment.settings import Config as MomentConfig
 from hautomate.apis.moment.events import EVT_TIME_SLIPPAGE
 from hautomate.util.async_ import safe_sync
 from hautomate.errors import HautoError
+# from hautomate.intent import Intent
+# from hautomate.api import API, api_method
 from hautomate import HAutomate
 
 from tests.fixtures import cfg_hauto
+
+
+# class DummyApi(API, name='dummy_api'):
+#     """ Just a dummy. """
+
+#     @api_method
+#     def foo(self):
+#         return Intent('DUMMY', lambda ctx: None)
+
+
+# @test('fn decorated with @api_method can be called as a decorator', tags=['unit'])
+# def _(cfg=cfg_hauto):
+#     # overwrite any existing api configs
+#     cfg.api_configs = {
+#         'dummy_api': None
+#     }
+
+#     hauto = HAutomate(cfg)
+#     hauto.apis._load_all_apis(None)
+
+#     @DummyApi.foo()
+#     def _foobar(ctx):
+#         return 1
+
+#     print(hauto.apis.dummy_api.instances)
+#     assert 1 == 2
+
+
+# @test('fn decorated with @api_method can be called inline with explicit kw=method')
+# def _(cfg=cfg_hauto):
+#     assert 1 == 2
 
 
 @test('APIRegistry autosetup runs on builtin apis', tags=['unit'])
@@ -59,22 +92,20 @@ async def _(cfg=cfg_hauto):
     @safe_sync
     def hanger(ctx):
         """ this is totally not safe """
-        time.sleep(0.5)
+        time.sleep(0.50)
 
     hauto.bus.subscribe('SOME_EVENT', hanger)
     await hauto.start()
 
     # ensure we're not lagging
     with raises(asyncio.TimeoutError):
-        coro = hauto.apis.trigger.wait_for(EVT_TIME_SLIPPAGE)
-        await asyncio.wait_for(coro, 1)
+        await hauto.apis.trigger.wait_for(EVT_TIME_SLIPPAGE, timeout=1)
 
     # induce the lag
     asyncio.create_task(hauto.bus.fire('SOME_EVENT', parent='ward.test'))
 
     try:
-        coro = hauto.apis.trigger.wait_for(EVT_TIME_SLIPPAGE)
-        await asyncio.wait_for(coro, 0.75)
+        await hauto.apis.trigger.wait_for(EVT_TIME_SLIPPAGE, timeout=0.75)
     except asyncio.TimeoutError:
         assert 1 == 2, 'no slippage occurred!'
 

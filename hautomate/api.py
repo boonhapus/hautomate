@@ -1,3 +1,5 @@
+from typing import Callable
+import functools as ft
 import logging
 import inspect
 
@@ -10,11 +12,47 @@ from hautomate.events import _EVT_INIT
 _log = logging.getLogger(__name__)
 
 
+# class api_method:
+#     """
+#     """
+#     def __init__(self, func: Callable):
+#         self.func = func
+#         self.hauto = None  # see __get__
+
+#     def __get__(self, instance, owner):
+#         print(instance, owner)
+
+#         if instance is None:
+#             _hauto = owner._hauto
+#             _api_dict = _hauto.apis._apis
+
+#             instance = _api_dict.get(owner.name, None)
+#             deferred = self.__as_decorator__
+#         else:
+#             deferred = self.__call__
+
+#         self.hauto = instance.hauto
+#         wrapped = ft.partial(deferred, instance)
+#         instance.__dict__[self.func.__name__] = wrapped
+#         return wrapped
+
+#     def __as_decorator__(self, *a, **kw):
+#         print(f'__as_decorator__, {a=}, {kw=}')
+#         return ft.partial(self.__call__, *a, **kw)
+
+#     def __call__(self, *a, **kw):
+#         print(f'{a=}')
+#         print(f'{kw=}')
+#         intent = self.func(*a, **kw)
+#         return intent
+
+
 class API:
     """
     Base class for APIs.
     """
     subclasses = {}
+    instances = {}
 
     def __init_subclass__(cls, name: str=None, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -25,6 +63,10 @@ class API:
     def __init__(self, hauto):
         self._hauto = hauto
         self._intents = []
+
+        cls = type(self)
+        cls.instances[cls.name] = self
+        cls._hauto = hauto
 
     @property
     def hauto(self):
@@ -92,10 +134,9 @@ class APIRegistry:
         """
         for name, api_cls in API.subclasses.items():
             if name == 'trigger':
-                data = {}
+                cfg = None
             elif name == 'moment':
                 cfg = self.hauto.config.api_configs.get('moment', None)
-                data = cfg.dict() if cfg is not None else {}
             else:
                 try:
                     cfg = self.hauto.config.api_configs[name]
@@ -104,6 +145,7 @@ class APIRegistry:
                     continue
 
             _log.info(f"setting up api '{name}'")
+            data = cfg.dict() if cfg is not None else {}
             self._apis[name] = api = api_cls(self.hauto, **data)
 
             # register_listeners
