@@ -1,4 +1,5 @@
 import asyncio
+import random
 import time
 
 from ward import test, each, raises
@@ -7,9 +8,11 @@ import pendulum
 from hautomate.apis.moment.settings import Config as MomentConfig
 from hautomate.apis.moment.events import EVT_TIME_SLIPPAGE
 from hautomate.util.async_ import safe_sync
+from hautomate.context import Context
 from hautomate.errors import HautoError
 from hautomate.intent import Intent
 from hautomate.api import API, api_method
+from hautomate.app import App
 from hautomate import HAutomate
 
 from tests.fixtures import cfg_hauto
@@ -19,13 +22,12 @@ class DummyApi(API, name='dummy_api'):
     """ Just a dummy. """
 
     @api_method
-    def foo(self, *, func=None):
-        return Intent('DUMMY', func)
+    def foo(self, evt='DUMMY', *, fn=None, value=0):
+        return Intent(evt, fn)
 
 
-@test('fn decorated with @api_method can be called as a decorator', tags=['unit', 'current'])
+@test('fn decorated with @api_method can be called as a decorator', tags=['unit'])
 def _(cfg=cfg_hauto):
-    # overwrite any existing api configs
     cfg.api_configs = {
         'dummy_api': None
     }
@@ -33,24 +35,86 @@ def _(cfg=cfg_hauto):
     hauto = HAutomate(cfg)
     hauto.apis._load_all_apis(None)
 
-    @DummyApi.foo()
-    def _foobar(ctx):
-        return 1
+    # apps are loaded after APIs are, in all cases .. so we simulate that here
 
-    @DummyApi.foo()
-    def _foobar_2(ctx):
-        return 1
+    class Hello(App):
+        """ """
+        @DummyApi.foo()
+        def world(self, ctx):
+            nonlocal counter
+            counter += 1
 
-    # print(hauto.apis.dummy_api.foo())
-    print(DummyApi.foo(func=lambda ctx: None))
-    print(_foobar)
-    # print(DummyApi.foo())
-    assert 1 == 2
+    # simulate registering the app
+
+    app = Hello(hauto)
+    hauto.apps._register('hello', app)
+
+    counter = 0
+    ctx_data = {
+        'event_data': {},
+        'when': pendulum.now(),
+        'parent': 'ward.test'
+    }
+
+    # run the intent a random number of times
+    x = random.randint(0, 5)
+
+    for intent in hauto.bus._events['DUMMY']:
+        ctx = Context(hauto, 'DUMMY', target=intent, **ctx_data)
+
+        for _ in range(x):
+            hauto.loop.run_until_complete(intent(ctx))
+
+    assert isinstance(Hello.world, Intent) is False
+    assert isinstance(app.world, Intent) is False
+    assert counter == x
 
 
-# @test('fn decorated with @api_method can be called inline with explicit kw=method')
-# def _(cfg=cfg_hauto):
-#     assert 1 == 2
+@test('fn decorated with @api_method can be called inline with explicit kw=method', tags=['unit'])
+def _(cfg=cfg_hauto):
+    cfg.api_configs = {
+        'dummy_api': None
+    }
+
+    hauto = HAutomate(cfg)
+    hauto.apis._load_all_apis(None)
+
+    @DummyApi.foo('DUMMY')
+    def hello_world(ctx):
+        """ """
+        nonlocal counter
+        counter += 1
+
+    counter = 0
+    ctx_data = {
+        'event_data': {},
+        'when': pendulum.now(),
+        'parent': 'ward.test'
+    }
+
+    intent = DummyApi.foo('DUMMY', fn=hello_world)
+
+    # run the intent a random number of times
+    x = random.randint(0, 5)
+
+    for intent in hauto.bus._events['DUMMY']:
+        ctx = Context(hauto, 'DUMMY', target=intent, **ctx_data)
+
+        for _ in range(x):
+            hauto.loop.run_until_complete(intent(ctx))
+
+    assert isinstance(hello_world, Intent) is False
+    assert isinstance(intent, Intent) is True
+    assert counter == x
+
+    # test the bad-user scenario, note the lack of fn keyword argument
+    with raises(TypeError):
+        _intent = DummyApi.foo('DUMMY', hello_world, value=0)
+        _intent()
+
+    with raises(TypeError):
+        _intent = DummyApi.foo(hello_world)
+        _intent()
 
 
 @test('APIRegistry autosetup runs on builtin apis', tags=['unit'])
@@ -132,6 +196,9 @@ async def _(
 
     real_beg = time.perf_counter()
     virt_beg = hauto.now
+    # in terms of timing, we'll sleep for at least 0.25s. asyncio makes best
+    # effort suspend execution for exactly 0.25s, but due to nature of asyncio
+    # it will always be over that much.. this is important for the assert stmt
     await asyncio.sleep(0.25)
     virt_end = hauto.now
     real_end = time.perf_counter()
@@ -139,5 +206,5 @@ async def _(
     real_elapsed = real_end - real_beg
     virt_elapsed = (virt_end - virt_beg).total_seconds()
 
-    assert round(virt_elapsed / speed, 2) == round(real_elapsed, 2)
+    assert round(virt_elapsed / speed, 1) == round(real_elapsed, 1)
     assert hauto.apis.moment.scale_to_realtime(0.25 * speed) == 0.25
