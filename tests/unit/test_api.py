@@ -8,37 +8,44 @@ from hautomate.apis.moment.settings import Config as MomentConfig
 from hautomate.apis.moment.events import EVT_TIME_SLIPPAGE
 from hautomate.util.async_ import safe_sync
 from hautomate.errors import HautoError
-# from hautomate.intent import Intent
-# from hautomate.api import API, api_method
+from hautomate.intent import Intent
+from hautomate.api import API, api_method
 from hautomate import HAutomate
 
 from tests.fixtures import cfg_hauto
 
 
-# class DummyApi(API, name='dummy_api'):
-#     """ Just a dummy. """
+class DummyApi(API, name='dummy_api'):
+    """ Just a dummy. """
 
-#     @api_method
-#     def foo(self):
-#         return Intent('DUMMY', lambda ctx: None)
+    @api_method
+    def foo(self, *, func=None):
+        return Intent('DUMMY', func)
 
 
-# @test('fn decorated with @api_method can be called as a decorator', tags=['unit'])
-# def _(cfg=cfg_hauto):
-#     # overwrite any existing api configs
-#     cfg.api_configs = {
-#         'dummy_api': None
-#     }
+@test('fn decorated with @api_method can be called as a decorator', tags=['unit', 'current'])
+def _(cfg=cfg_hauto):
+    # overwrite any existing api configs
+    cfg.api_configs = {
+        'dummy_api': None
+    }
 
-#     hauto = HAutomate(cfg)
-#     hauto.apis._load_all_apis(None)
+    hauto = HAutomate(cfg)
+    hauto.apis._load_all_apis(None)
 
-#     @DummyApi.foo()
-#     def _foobar(ctx):
-#         return 1
+    @DummyApi.foo()
+    def _foobar(ctx):
+        return 1
 
-#     print(hauto.apis.dummy_api.instances)
-#     assert 1 == 2
+    @DummyApi.foo()
+    def _foobar_2(ctx):
+        return 1
+
+    # print(hauto.apis.dummy_api.foo())
+    print(DummyApi.foo(func=lambda ctx: None))
+    print(_foobar)
+    # print(DummyApi.foo())
+    assert 1 == 2
 
 
 # @test('fn decorated with @api_method can be called inline with explicit kw=method')

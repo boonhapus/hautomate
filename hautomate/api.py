@@ -12,39 +12,44 @@ from hautomate.events import _EVT_INIT
 _log = logging.getLogger(__name__)
 
 
-# class api_method:
-#     """
-#     """
-#     def __init__(self, func: Callable):
-#         self.func = func
-#         self.hauto = None  # see __get__
+class api_method:
+    """
+    """
+    def __init__(self, func: Callable):
+        self.intent_factory = func
+        self.api = None  # see __get__
 
-#     def __get__(self, instance, owner):
-#         print(instance, owner)
+    def __get__(self, instance, owner):
+        if instance is None:
+            instance = owner.instances[owner.name]
 
-#         if instance is None:
-#             _hauto = owner._hauto
-#             _api_dict = _hauto.apis._apis
+        # bind the api instance we'll need to .subscribe the resulting Intent
+        self.api = instance
+        wrapped = ft.partial(self.__call__, instance)
+        instance.__dict__[self.intent_factory.__name__] = wrapped
+        return wrapped
 
-#             instance = _api_dict.get(owner.name, None)
-#             deferred = self.__as_decorator__
-#         else:
-#             deferred = self.__call__
+    def __decorated__(self, *a, **kw):
+        *a, func = a
 
-#         self.hauto = instance.hauto
-#         wrapped = ft.partial(deferred, instance)
-#         instance.__dict__[self.func.__name__] = wrapped
-#         return wrapped
+        if func is None or func is self.api:
+            raise TypeError(f"{self.intent_factory.__qualname__}() missing 1 required keyword-only argument: 'func'")
 
-#     def __as_decorator__(self, *a, **kw):
-#         print(f'__as_decorator__, {a=}, {kw=}')
-#         return ft.partial(self.__call__, *a, **kw)
+        intent = self.intent_factory(*a, func=func, **kw)
+        self.api.hauto.bus.subscribe(intent.event, intent)
+        return intent
 
-#     def __call__(self, *a, **kw):
-#         print(f'{a=}')
-#         print(f'{kw=}')
-#         intent = self.func(*a, **kw)
-#         return intent
+    def __call__(self, *a, func=None, **kw):
+        """
+        If func is provided, we'll skip down to creating an intent.
+        If we're being used as a decorator (default: False)
+        """
+        if func is None:
+            return ft.partial(self.__decorated__, *a, **kw)
+
+        intent = self.intent_factory(*a, func=func, **kw)
+        self.api.hauto.bus.subscribe(intent.event, intent)
+        return intent
 
 
 class API:
