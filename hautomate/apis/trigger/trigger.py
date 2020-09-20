@@ -57,14 +57,14 @@ class Trigger(API):
     # Intents
 
     # @api_method
-    def on(self, event_name: str, *, method=None, **intent_kwargs) -> Intent:
-        """
+    # def on(self, event_name: str, *, method=None, **intent_kwargs) -> Intent:
+    #     """
 
-        trigger.on(some_event, method=lambda ctx: None)
+    #     trigger.on(some_event, method=lambda ctx: None)
 
-        @trigger.on(some_event)
-        """
-        if method is None:
-            pass
+    #     @trigger.on(some_event)
+    #     """
+    #     if method is None:
+    #         pass
 
-        return Intent()
+    #     return Intent()

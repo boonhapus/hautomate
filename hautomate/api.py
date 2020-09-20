@@ -15,39 +15,86 @@ _log = logging.getLogger(__name__)
 class api_method:
     """
     """
-    def __init__(self, func: Callable):
-        self.intent_factory = func
+    def __init__(self, fn: Callable):
+        self.intent_factory = fn
         self.api = None  # see __get__
 
     def __get__(self, instance, owner):
         if instance is None:
             instance = owner.instances[owner.name]
 
-        # bind the api instance we'll need to .subscribe the resulting Intent
+        # bind the api instance to pretend like we know if the user is calling
+        # the decorated version appropriately, as well as access
+        # hauto.bus.subscribe for the resulting Intent
         self.api = instance
         wrapped = ft.partial(self.__call__, instance)
         instance.__dict__[self.intent_factory.__name__] = wrapped
         return wrapped
 
-    def __decorated__(self, *a, **kw):
-        *a, func = a
+    def __decorated__(self, *a, _original_a: dict, **kw):
+        *a, fn = a
 
-        if func is None or func is self.api:
-            raise TypeError(f"{self.intent_factory.__qualname__}() missing 1 required keyword-only argument: 'func'")
+        # NOTE:
+        #
+        # this is the situation where a sync-User attempts to call the
+        # declarative paradigm imperatively. It's not valid to do, so we're
+        # going to log a warning and help them out.
+        if tuple(a) != _original_a:
+            factory = self.intent_factory.__qualname__
+            fn_name = fn.__name__
+            a_repr = kw_repr = ''
 
-        intent = self.intent_factory(*a, func=func, **kw)
-        self.api.hauto.bus.subscribe(intent.event, intent)
-        return intent
+            if a[1:]:
+                args = ', '.join(f'{_}' for _ in a[1:])
+                a_repr = f'{args}, '
 
-    def __call__(self, *a, func=None, **kw):
-        """
-        If func is provided, we'll skip down to creating an intent.
-        If we're being used as a decorator (default: False)
-        """
-        if func is None:
-            return ft.partial(self.__decorated__, *a, **kw)
+            if kw:
+                kwgs = ', '.join(f'{k}={v}' for k, v in kw.items())
+                kw_repr = f', {kwgs}'
 
-        intent = self.intent_factory(*a, func=func, **kw)
+            signature = f'{factory}({a_repr}fn={fn_name}{kw_repr})'
+
+            _log.error(
+                f"calling '{fn_name}' as if it were a decorator, if you're getting "
+                f"unexpected results, maybe you meant:  {signature}"
+            )
+            raise TypeError(f"{self.intent_factory.__qualname__}() missing 1 required keyword-only argument: 'fn'")
+
+        intent = self.intent_factory(*a, fn=fn, **kw)
+
+        try:
+            fn.__intents__.append(intent)
+        except AttributeError:
+            fn.__intents__ = [intent]
+
+        return fn
+
+    def __call__(self, *a, fn: Callable=None, **kw):
+        # declarative context: user wants to do
+        #
+        # @some_intent_creator(*a, **kw)
+        # def intended(ctx):
+        #   ...
+        #
+        if fn is None:
+            # NOTE:
+            # could create a subclass for partial and impl __await__, and then
+            # warn the user when they await on a ft.partial (aka improper use
+            # of an api_method)
+            #
+            # NOTE:
+            # store the originally supplied args to tell if the User is in the
+            # correct context
+            return ft.partial(self.__decorated__, *a, _original_a=a, **kw)
+
+        # imperative context: user wants to do
+        #
+        # def intended(ctx):
+        #   ...
+        #
+        # intent = some_intent_creator(*a, fn=intended, **kw)
+        #
+        intent = self.intent_factory(*a, fn=fn, **kw)
         self.api.hauto.bus.subscribe(intent.event, intent)
         return intent
 

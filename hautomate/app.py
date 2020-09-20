@@ -167,10 +167,10 @@ class AppRegistry:
             if name.startswith('on_'):
                 self.hauto.bus.subscribe(name[3:].upper(), meth)
 
-        #     if hasattr(meth, '__intents__'):
-        #         for intent in meth.__intents__:
-        #             intent._bind(meth)
-        #             self.hauto.bus.subscribe(intent.event, intent)
+            if hasattr(meth, '__intents__'):
+                for intent in meth.__intents__:
+                    intent._bind(meth)
+                    self.hauto.bus.subscribe(intent.event, intent)
 
     def __iter__(self):
         return iter(self._apps.copy().values())

@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Dict
 import itertools as it
 
 import pendulum
@@ -19,7 +19,7 @@ class Context:
         hauto: 'HAutomate',
         event: str,
         *,
-        event_data: dict,
+        event_data: Dict,
         target: 'Intent',
         when: pendulum.DateTime,
         parent: Union['Intent', 'HAutomate']

@@ -20,11 +20,11 @@ class Intent(Asyncable):
     items similar to asyncio's Task, in that they hold an internal state
     and represent work that will be done in the future.
     """
-    def __init__(self, event: str, func: Callable, *, checks: list=None, limit: int=-1):
-        super().__init__(func)
+    def __init__(self, event: str, fn: Callable, *, checks: list=None, limit: int=-1):
+        super().__init__(fn)
 
         try:
-            existing_checks = func.__checks__
+            existing_checks = fn.__checks__
         except AttributeError:
             existing_checks = []
         finally:
