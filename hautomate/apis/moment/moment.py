@@ -21,7 +21,7 @@ class Moment(API):
     hauto : HAutomate
       hautomate!
 
-    resolution : float = 1.0
+    resolution : float = 0.25
       number of seconds between TIME_UPDATE events
 
     speed : float = 1.0

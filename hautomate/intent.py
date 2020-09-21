@@ -54,7 +54,7 @@ class Intent(Asyncable):
         """
         self.func = method
         self._app = method.__self__
-        self._app._intents.append(self)
+        self._app.intents.append(self)
 
     async def can_run(self, ctx: Context, *a, **kw) -> bool:
         """
@@ -63,8 +63,8 @@ class Intent(Asyncable):
         if self.runs >= self.limit > 0:
             return False
 
-        if self._state == IntentState.cancelled:
-            return False
+        # if self._state == IntentState.cancelled:
+        #     return False
 
         if not await self._all_checks_pass(ctx):
             return False
