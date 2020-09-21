@@ -1,10 +1,14 @@
-from typing import Dict
+from typing import Union, Dict
 import importlib
+import logging
 
 from pendulum.tz.zoneinfo.exceptions import InvalidTimezone
 from pydantic import BaseModel, validator
 import pendulum
 import pydantic
+
+
+_log = logging.getLogger(__name__)
 
 
 class Settings(BaseModel):
@@ -30,7 +34,10 @@ class HautoConfig(Settings):
     longitude: float
     elevation: float
     timezone: pendulum._Timezone
-    api_configs: Dict[str, Settings] = {}
+    api_configs: Dict[str, Union[Settings, None]] = {
+        'trigger': {},
+        'moment': {}
+    }
 
     # @classmethod
     # def from_yaml(cls, fp: str):
@@ -55,15 +62,24 @@ class HautoConfig(Settings):
 
         return tz
 
-    @validator('api_configs', pre=True)
+    @validator('api_configs', pre=True, always=True)
     def is_api_config(cls, data: dict):
-        for api_name, settings in data.copy().items():
+        for api_name, cfg_data in data.copy().items():
             try:
-                cfg = importlib.import_module(f'hautomate.apis.{api_name}.settings')
+                importlib.import_module(f'hautomate.apis.{api_name}.{api_name}')
             except ModuleNotFoundError:
-                raise ValueError(f"unrecognized api '{api_name}'")
+                raise ValueError(f"api '{api_name}' does not appear to exist")
 
-            data[api_name] = cfg.Config.parse_obj(settings)
+            try:
+                settings = importlib.import_module('.settings', package=f'hautomate.apis.{api_name}')
+            except ModuleNotFoundError:
+                if api_name != 'trigger':
+                    _log.warning(f"api '{api_name}' does not appear to have a configuration validator")
+                cfg = None
+            else:
+                cfg = settings.Config.parse_obj(cfg_data)
+
+            data[api_name] = cfg
 
         return data
 

@@ -5,9 +5,9 @@ import time
 from ward import test, each, raises
 import pendulum
 
-from hautomate.apis.moment.settings import Config as MomentConfig
 from hautomate.apis.moment.events import EVT_TIME_SLIPPAGE
 from hautomate.util.async_ import safe_sync
+from hautomate.settings import HautoConfig
 from hautomate.context import Context
 from hautomate.errors import HautoError
 from hautomate.intent import Intent
@@ -15,7 +15,7 @@ from hautomate.api import API, api_method
 from hautomate.app import App
 from hautomate import HAutomate
 
-from tests.fixtures import cfg_hauto
+from tests.fixtures import cfg_data_hauto, cfg_hauto
 
 
 class DummyApi(API, name='dummy_api'):
@@ -23,11 +23,15 @@ class DummyApi(API, name='dummy_api'):
 
     @api_method
     def foo(self, evt='DUMMY', *, fn=None, value=0):
+        """ If that was a dummy, this is a dummer. """
         return Intent(evt, fn)
 
 
 @test('fn decorated with @api_method can be called as a decorator', tags=['unit'])
-def _(cfg=cfg_hauto):
+def _(cfg_data=cfg_data_hauto):
+    cfg = HautoConfig(**cfg_data)
+
+    # simulate a working api
     cfg.api_configs = {
         'dummy_api': None
     }
@@ -38,9 +42,10 @@ def _(cfg=cfg_hauto):
     # apps are loaded after APIs are, in all cases .. so we simulate that here
 
     class Hello(App):
-        """ """
+        """ Talking about Dummys? """
         @DummyApi.foo()
         def world(self, ctx):
+            """ Pretty dumb if you ask me! """
             nonlocal counter
             counter += 1
 
@@ -70,8 +75,11 @@ def _(cfg=cfg_hauto):
     assert counter == x
 
 
-@test('fn decorated with @api_method can be called inline with explicit kw=method', tags=['unit'])
-def _(cfg=cfg_hauto):
+@test('fn decorated with @api_method can be called inline with explicit fn=method', tags=['unit'])
+def _(cfg_data=cfg_data_hauto):
+    cfg = HautoConfig(**cfg_data)
+
+    # simulate a working api
     cfg.api_configs = {
         'dummy_api': None
     }
@@ -81,7 +89,7 @@ def _(cfg=cfg_hauto):
 
     @DummyApi.foo('DUMMY')
     def hello_world(ctx):
-        """ """
+        """ Probably the dumbest. """
         nonlocal counter
         counter += 1
 
@@ -118,9 +126,11 @@ def _(cfg=cfg_hauto):
 
 
 @test('APIRegistry autosetup runs on builtin apis', tags=['unit'])
-def _(cfg=cfg_hauto):
-    # overwrite any existing api configs
-    cfg.api_configs = {}
+def _(cfg_data=cfg_data_hauto):
+    # remove any existing api configs
+    data = cfg_data.copy()
+    data.pop('api_configs', None)
+    cfg = HautoConfig(**data)
 
     hauto = HAutomate(cfg)
     hauto.apis._load_all_apis(None)
@@ -138,6 +148,7 @@ async def _(cfg=cfg_hauto):
     counter = 0
 
     async def _dummy(ctx):
+        """ Dumbest of them all, eh? """
         nonlocal counter
         counter += 1
 
@@ -159,24 +170,24 @@ async def _(cfg=cfg_hauto):
 @test('Moment API notifies on event loop slippage', tags=['unit'])
 async def _(cfg=cfg_hauto):
     hauto = HAutomate(cfg)
+    await hauto.start()
 
     @safe_sync
     def hanger(ctx):
-        """ this is totally not safe """
-        time.sleep(0.50)
+        """ This is totally not safe """
+        time.sleep(1.00)
 
     hauto.bus.subscribe('SOME_EVENT', hanger)
-    await hauto.start()
 
     # ensure we're not lagging
     with raises(asyncio.TimeoutError):
-        await hauto.apis.trigger.wait_for(EVT_TIME_SLIPPAGE, timeout=1)
+        await hauto.apis.trigger.wait_for(EVT_TIME_SLIPPAGE, timeout=0.5)
 
     # induce the lag
     asyncio.create_task(hauto.bus.fire('SOME_EVENT', parent='ward.test'))
 
     try:
-        await hauto.apis.trigger.wait_for(EVT_TIME_SLIPPAGE, timeout=0.75)
+        await hauto.apis.trigger.wait_for(EVT_TIME_SLIPPAGE, timeout=1.5)
     except asyncio.TimeoutError:
         assert 1 == 2, 'no slippage occurred!'
 
@@ -185,12 +196,15 @@ async def _(cfg=cfg_hauto):
 
 @test('Moment API allows time travel: speed={speed}, epoch={epoch}', tags=['unit'])
 async def _(
-    cfg=cfg_hauto,
+    cfg_data=cfg_data_hauto,
     speed=each(1.0, 2.0),
     epoch=each(None, pendulum.parse('1999/12/31 12:59:00'))
 ):
     # overwrite any existing api configs
-    cfg.api_configs = {'moment': MomentConfig(speed=speed, epoch=epoch)}
+    data = cfg_data.copy()
+    data['api_configs'] = {'moment': {'speed': speed, 'epoch': epoch}}
+    cfg = HautoConfig(**data)
+
     hauto = HAutomate(cfg)
     await hauto.start()
 
