@@ -107,8 +107,8 @@ class HAutomate:
         Start Hautomate.
         """
         self.loop.set_debug(debug)
-        self._state = CoreState.starting
         await self.bus.fire(_EVT_INIT, parent=self, wait='ALL_COMPLETED')
+        self._state = CoreState.starting
         await self.bus.fire(EVT_START, parent=self, wait='ALL_COMPLETED')
         self._state = CoreState.ready
         await self.bus.fire(EVT_READY, parent=self, wait='ALL_COMPLETED')
