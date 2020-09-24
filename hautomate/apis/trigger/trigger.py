@@ -1,11 +1,14 @@
+from typing import Union, Callable, Tuple
 import collections
 import asyncio
+import re
 
+from hautomate.util.async_ import safe_sync
 from hautomate.context import Context
 from hautomate.events import _META_EVENTS, EVT_ANY
 from hautomate.intent import Intent
-from hautomate.api import API
 from hautomate.check import Check
+from hautomate.api import API, api_method, public_method
 
 
 class Trigger(API):
@@ -42,6 +45,7 @@ class Trigger(API):
 
     # PUBLIC METHODS
 
+    @public_method
     async def wait_for(self, event_name: str, *, timeout: float=None):
         """
         Block until the next time <event_name> is seen.

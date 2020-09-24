@@ -106,6 +106,22 @@ class APIRegistry:
             raise HautoError(f"api '{name}' does not exist")
 
 
+class public_method:
+    """
+    Wrapper for a public_method.
+    """
+    def __init__(self, method):
+        self.method = method
+
+    def __get__(self, instance: object, owner: API):
+        if instance is None:
+            instance = owner.instances[owner.name]
+
+        injected = ft.partial(self.method, instance)
+        instance.__dict__[self.method.__name__] = injected
+        return injected
+
+
 class api_method:
     """
     Wrapper for an api method which returns an Intent.
