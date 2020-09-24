@@ -7,6 +7,7 @@ from hautomate.util.async_ import safe_sync
 from hautomate.context import Context
 from hautomate.errors import HautoError
 from hautomate.events import _EVT_INIT
+from hautomate.enums import CoreState
 
 
 _log = logging.getLogger(__name__)
@@ -83,11 +84,6 @@ class APIRegistry:
         An Intent which loads all APIs.
         """
         for name, api_cls in API.subclasses.items():
-            # if name == 'trigger':
-            #     cfg = None
-            # elif name == 'moment':
-            #     cfg = self.hauto.config.api_configs.get('moment', None)
-            # else:
             try:
                 cfg = self.hauto.config.api_configs[name]
             except KeyError:
@@ -132,43 +128,15 @@ class api_method:
         if instance is None:
             instance = owner.instances[owner.name]
 
-        # bind the api instance to pretend like we know if the user is calling
-        # the decorated version appropriately, as well as access
+        # bind the api instance so we can later access
         # hauto.bus.subscribe for the resulting Intent
         self.api = instance
         wrapped = ft.partial(self.__call__, instance)
         instance.__dict__[self.intent_factory.__name__] = wrapped
         return wrapped
 
-    def __decorated__(self, *a, _original_a: dict, **kw):
+    def __decorated__(self, *a, **kw):
         *a, fn = a
-
-        # NOTE:
-        #
-        # this is the situation where a sync-User attempts to call the
-        # declarative paradigm imperatively. It's not valid to do, so we're
-        # going to log a warning and help them out.
-        if tuple(a) != _original_a:
-            factory = self.intent_factory.__qualname__
-            fn_name = fn.__name__
-            a_repr = kw_repr = ''
-
-            if a[1:]:
-                args = ', '.join(f'{_}' for _ in a[1:])
-                a_repr = f'{args}, '
-
-            if kw:
-                kwgs = ', '.join(f'{k}={v}' for k, v in kw.items())
-                kw_repr = f', {kwgs}'
-
-            signature = f'{factory}({a_repr}fn={fn_name}{kw_repr})'
-
-            _log.error(
-                f"calling '{fn_name}' as if it were a decorator, if you're getting "
-                f"unexpected results, maybe you meant:  {signature}"
-            )
-            raise TypeError(f"{self.intent_factory.__qualname__}() missing 1 required keyword-only argument: 'fn'")
-
         intent = self.intent_factory(*a, fn=fn, **kw)
 
         try:
@@ -178,7 +146,7 @@ class api_method:
 
         return fn
 
-    def __call__(self, *a, fn: Callable=None, **kw):
+    def __call__(self, *a, fn: Callable=None, subscribe: bool=True, **kw):
         # declarative context: user wants to do
         #
         # @some_intent_creator(*a, **kw)
@@ -186,15 +154,22 @@ class api_method:
         #   ...
         #
         if fn is None:
+            # Declarative should only happen during the pre-start phase, on _EVT_INIT.
+            # If we're finding that users are calling the declarative version without
+            # a fn keyword argument, then they've likely made a mistake.
+            if self.api.hauto._state != CoreState.initialized:
+                __qualname__ = f'{self.api.name}.{self.intent_factory.__name__}'
+                _log.warning(
+                    'detected declarative context after startup!\ndid you forget to '
+                    'provide the fn keyword argument?'
+                )
+                raise TypeError(f"{__qualname__}() missing 1 required keyword-only argument: 'fn'")
+
             # NOTE:
-            # could create a subclass for partial and impl __await__, and then
-            # warn the user when they await on a ft.partial (aka improper use
-            # of an api_method)
-            #
-            # NOTE:
-            # store the originally supplied args to tell if the User is in the
-            # correct context
-            return ft.partial(self.__decorated__, *a, _original_a=a, **kw)
+            #   in the past, we stored the original *a as _original_a=a, and then
+            #   handled the error in __decorated__. If we move the above error to
+            #   a warning, we'll want to do something like that again.
+            return ft.partial(self.__decorated__, *a, **kw)
 
         # imperative context: user wants to do
         #
@@ -204,5 +179,8 @@ class api_method:
         # intent = some_intent_creator(*a, fn=intended, **kw)
         #
         intent = self.intent_factory(*a, fn=fn, **kw)
-        self.api.hauto.bus.subscribe(intent.event, intent)
+
+        if subscribe:
+            self.api.hauto.bus.subscribe(intent.event, intent)
+
         return intent
