@@ -18,19 +18,18 @@ class Trigger(API):
 
     #
 
-    async def on_start(self, ctx: Context, *args, **kwargs):
+    @safe_sync
+    def on_start(self, ctx: Context):
         """
         Called once HAutomate is ready to begin processing events.
         """
         check = Check(lambda ctx: ctx.event not in _META_EVENTS)
-        intent = Intent(EVT_ANY, self.on_almost_any_event, checks=[check])
-        self.hauto.bus.subscribe(EVT_ANY, intent)
-        # self.on(EVT_ANY, method=self.on_almost_any_event)
+        self.on(EVT_ANY, fn=self.almost_any_event, checks=[check])
 
-    # @check(lambda ctx: ctx.event not in _META_EVENTS)
-    async def on_almost_any_event(self, ctx: Context, *args, **kwargs):
+    @safe_sync
+    def almost_any_event(self, ctx: Context):
         """
-        Called on every event except TIME_UPDATE.
+        Called on every non-meta event.
 
         This first time an event is fired, an asyncio.Event is created. The
         event grabbed is set and cleared immediately, triggering all coroutines
