@@ -33,7 +33,7 @@ class Intent(Asyncable):
             cooldown = next((c for c in all_checks if isinstance(c, Cooldown)), None)
 
         self._id = next(_intent_id)
-        self.event = event
+        self.event = event.upper()
         self.checks = checks
         self.cooldown = cooldown
         self.limit = limit
