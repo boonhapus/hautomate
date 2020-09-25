@@ -10,10 +10,11 @@ from hautomate.check import Check
 
 class MomentaryCheck(Check):
     """
+    Advanced Check which comapres ctx.when against a moment in time.
     """
     def __init__(self, dt_or_time: Union[pendulum.DateTime, pendulum.Time]):
-        super().__init__(priority=0)
         self.dt_or_time = dt_or_time
+        super().__init__()
 
     async def __check__(self, ctx: Context) -> bool:
         moment = ctx.hauto.apis.moment
