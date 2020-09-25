@@ -21,7 +21,7 @@ class Check(Asyncable):
     determines Intent viability must then live under a magic method
     __check__.
     """
-    def __init__(self, func: Callable=None, name: str=None, priority: int=-1):
+    def __init__(self, func: Callable=None, name: str=None):
         func = getattr(self, '__check__', func)
 
         if func is None:
@@ -30,12 +30,8 @@ class Check(Asyncable):
                 'or define method __check__'
             )
 
-        super().__init__(func)
         self.name = name
-    #     self.priority = priority
-
-    # def __lt__(self, other):
-    #     return self.priority < other.priority
+        super().__init__(func)
 
     def __call__(self, ctx: Context, *a, **kw) -> bool:
         return super().__call__(ctx, *a, loop=ctx.hauto.loop, **kw)
@@ -108,10 +104,10 @@ class Debounce(Cooldown):
         if edge.upper() not in ('LEADING', 'TRAILING'):
             raise ValueError(f'edge must be one of "LEADING" or "TRAILING", got {edge}')
 
-        super().__init__()
         self.wait = wait
         self.edge = edge.upper()
         self.last_seen = None
+        super().__init__()
 
     def __check_leading__(self, now: pendulum.DateTime):
         try:
@@ -177,11 +173,11 @@ class Throttle(Cooldown):
         number of allowable requests within a period
     """
     def __init__(self, seconds: int=1.0, *, max_tokens: float=1.0):
-        super().__init__()
         self._seconds = seconds
         self._max_tokens = max_tokens
         self.tokens = max_tokens
         self.last_seen = None
+        super().__init__()
 
     @property
     def retry_after(self) -> int:
