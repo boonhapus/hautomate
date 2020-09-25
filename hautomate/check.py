@@ -21,7 +21,7 @@ class Check(Asyncable):
     determines Intent viability must then live under a magic method
     __check__.
     """
-    def __init__(self, func: Callable=None, name: str=None):
+    def __init__(self, func: Callable=None, name: str=None, priority: int=-1):
         func = getattr(self, '__check__', func)
 
         if func is None:
@@ -32,6 +32,10 @@ class Check(Asyncable):
 
         super().__init__(func)
         self.name = name
+    #     self.priority = priority
+
+    # def __lt__(self, other):
+    #     return self.priority < other.priority
 
     def __call__(self, ctx: Context, *a, **kw) -> bool:
         return super().__call__(ctx, *a, loop=ctx.hauto.loop, **kw)

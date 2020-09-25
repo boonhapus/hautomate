@@ -5,8 +5,10 @@ import time
 import pendulum
 
 from hautomate.apis.moment.events import EVT_TIME_UPDATE, EVT_TIME_SLIPPAGE
+from hautomate.util.async_ import safe_sync
 from hautomate.context import Context
-from hautomate.api import API
+from hautomate.intent import Intent
+from hautomate.api import API, api_method, public_method
 
 
 _log = logging.getLogger(__name__)
@@ -43,6 +45,7 @@ class Moment(API):
         self.speed = speed
         self.epoch = epoch or pendulum.now(tz=hauto.config.timezone)
         self._monotonic_epoch = time.perf_counter()
+        self._intent_queue = asyncio.PriorityQueue()
 
     @property
     def now(self) -> pendulum.DateTime:
@@ -54,7 +57,8 @@ class Moment(API):
 
     # Listeners and Internal Methods
 
-    async def on_ready(self, ctx: Context):
+    @safe_sync
+    def on_ready(self, ctx: Context):
         """
         Called once HAutomate is ready to begin processing events.
         """
@@ -78,6 +82,7 @@ class Moment(API):
 
     # Public Methods
 
+    @public_method
     def scale_to_realtime(self, seconds: float) -> float:
         """
         Convert the input time, scaled by the time factor in HAutomate.
@@ -86,3 +91,20 @@ class Moment(API):
         outside of HAutomate.
         """
         return seconds / self.speed
+
+    # Intents
+
+    @api_method
+    def at(self) -> Intent:
+        """
+        """
+
+    @api_method
+    def soon(self) -> Intent:
+        """
+        """
+
+    @api_method
+    def every(self) -> Intent:
+        """
+        """
