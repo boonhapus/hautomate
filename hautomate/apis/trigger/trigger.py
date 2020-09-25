@@ -1,4 +1,4 @@
-from typing import Union, Callable, Tuple
+from typing import Callable, Tuple
 import collections
 import asyncio
 import re

@@ -3,7 +3,7 @@ import functools as ft
 import logging
 import inspect
 
-from hautomate.util.async_ import safe_sync
+from hautomate.util.async_ import safe_sync, Asyncable
 from hautomate.context import Context
 from hautomate.errors import HautoError
 from hautomate.events import _EVT_INIT
@@ -16,6 +16,26 @@ _log = logging.getLogger(__name__)
 class API:
     """
     Base class for APIs.
+
+    APIs operate much like Singletons. The main idea being that it's
+    perfectly valid for a public API method to be called directly from
+    the class. This allows the user to be able to reference the API as
+    an import.
+
+    ---
+
+    from hautomate import App
+    from hautomate.apis import trigger
+
+    class MyCoolApp(App):
+
+        @trigger.on('SOME_EVENT')
+        def do_a_thing(ctx):
+            trigger.wait_for('SOME_OTHER_EVENT')
+
+    ---
+
+    This would be a totally valid workflow.
     """
     subclasses = {}
     instances = {}
@@ -54,10 +74,6 @@ class API:
 
         return_when : str, default = ALL_FIRED
             one of ALL_FIRED, FIRST_COMPLETED, FIRST_EXCEPTION, or ALL_COMPLETED
-
-        Returns
-        -------
-        tasks_or_results : List[Union[Task, Any]]
         """
         kwargs = {
             'event': event,
@@ -106,9 +122,11 @@ class APIRegistry:
             raise HautoError(f"api '{name}' does not exist")
 
 
-class public_method:
+class public_method(Asyncable):
     """
     Wrapper for a public_method.
+
+    This decorator simply grabs the instance that's already set up.
     """
     def __init__(self, method):
         self.method = method
@@ -136,8 +154,8 @@ class api_method:
 
     That's it!
     """
-    def __init__(self, fn: Callable):
-        self.intent_factory = fn
+    def __init__(self, intent_factory: Callable):
+        self.intent_factory = intent_factory
         self.api = None  # see __get__
 
     def __get__(self, instance: object, owner: API):

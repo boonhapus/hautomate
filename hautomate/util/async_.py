@@ -34,7 +34,7 @@ def determine_concurrency(func: Callable) -> str:
         return 'coroutine'
 
     if not callable(func):
-        raise TypeError('"{func}" is not a callable')
+        raise TypeError(f'"{func}" is not a callable, got {type(func)}')
 
     if asyncio.iscoroutinefunction(func):
         return 'async'
