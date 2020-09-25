@@ -3,7 +3,6 @@ import asyncio
 from ward import test, each
 
 from hautomate.util.async_ import safe_sync
-from hautomate.context import Context
 from hautomate.intent import Intent
 from hautomate.apis import trigger
 from hautomate import HAutomate

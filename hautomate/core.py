@@ -57,7 +57,7 @@ class HAutomate:
         if not self.is_ready:
             return pendulum.now(self.config.timezone)
 
-        return self.apis.moment.now
+        return self.apis.moment.now()
 
     #
 

@@ -40,20 +40,11 @@ class Moment(API):
         speed: float=1.00,
         epoch: pendulum.DateTime=None
     ):
-        super().__init__(hauto)
         self.resolution = resolution
         self.speed = speed
         self.epoch = epoch or pendulum.now(tz=hauto.config.timezone)
         self._monotonic_epoch = time.perf_counter()
-        self._intent_queue = asyncio.PriorityQueue()
-
-    @property
-    def now(self) -> pendulum.DateTime:
-        """
-        Return the current time.
-        """
-        elapsed = time.perf_counter() - self._monotonic_epoch
-        return self.epoch.add(seconds=elapsed * self.speed)
+        super().__init__(hauto)
 
     # Listeners and Internal Methods
 
