@@ -6,19 +6,22 @@ build-backend = "poetry.masonry.api"
 name = "hautomate"
 version = "0.1.0"
 description = "Task automation library focused on home automation."
-authors = ["SupahNoob <_@boonhap.us>"]
+authors = ["boonhapus <_@boonhap.us>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.7.1"
 pendulum = "^2.1.2"
 httpx = "^0.14.1"
 async-timeout = "^3.0.1"
 websockets = "^8.1"
-astral = "^2.2"
+astral = "1.10.1"
 pydantic = "^1.6.1"
 
+# extras to support APIs
+homeassistant = {version = "^0.115.3", optional = true}
 
+# not sure why, but Github Action won't install dev-dependencies, so we do this for now.
 coverage = {extras = ["toml"], version = "^5.2", optional = true}
 ward = {version = "^0.48.0-beta.0", optional = true}
 
@@ -30,12 +33,13 @@ nox = "^2020.5.24"
 ward = "^0.48.0-beta.0"
 databases = {extras = ["postgresql"], version = "^0.3.2"}
 
-# [tool.poetry.extras]
-# test = [
-#     "coverage",
-#     "nox",
-#     "ward",
-# ]
+[tool.poetry.extras]
+homeassistant = ["homeassistant"]
+test = [
+    "coverage",
+    "nox",
+    "ward",
+]
 
 [tool.coverage.run]
 branch = true

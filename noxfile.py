@@ -5,7 +5,7 @@ import nox
 
 ON_GITHUB = 'GITHUB_ACTIONS' in os.environ
 
-py37 = '3.7'
+py37 = '3.7.1'
 py38 = '3.8'
 
 nox.options.reuse_existing_virtualenvs = True
