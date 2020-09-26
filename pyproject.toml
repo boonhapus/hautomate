@@ -17,7 +17,6 @@ async-timeout = "^3.0.1"
 websockets = "^8.1"
 astral = "^2.2"
 pydantic = "^1.6.1"
-databases = {extras = ["postgresql"], version = "^0.3.2"}
 
 
 coverage = {extras = ["toml"], version = "^5.2", optional = true}
@@ -29,6 +28,7 @@ flake8 = "^3.8.3"
 coverage = {extras = ["toml"], version = "^5.2"}
 nox = "^2020.5.24"
 ward = "^0.48.0-beta.0"
+databases = {extras = ["postgresql"], version = "^0.3.2"}
 
 # [tool.poetry.extras]
 # test = [
