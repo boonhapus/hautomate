@@ -137,7 +137,7 @@ async def _(
         assert isinstance(intent, Intent) is True
 
 
-@test('MomentaryCheck', tags=['unit'])
+@test('MomentaryCheck ensures on-time firing', tags=['unit'])
 async def _(
     cfg=cfg_hauto,
     dt_or_time=each(None, pendulum.parse('0:00:00', exact=True))

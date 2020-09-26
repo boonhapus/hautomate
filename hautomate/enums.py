@@ -18,4 +18,6 @@ class IntentState(enum.Enum):
     Represent the current state of an Intent.
     """
     initialized = 'INITIALIZED'
+    ready = 'READY'
+    paused = 'PAUSED'
     cancelled = 'CANCELLED'
