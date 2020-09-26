@@ -24,7 +24,7 @@ class Trigger(API):
     @safe_sync
     def on_start(self, ctx: Context):
         """
-        Called once HAutomate is ready to begin processing events.
+        Called once Hautomate is ready to begin processing events.
         """
         check = Check(lambda ctx: ctx.event not in _META_EVENTS)
         self.on(EVT_ANY, fn=self.almost_any_event, checks=[check])
@@ -51,7 +51,7 @@ class Trigger(API):
         Block until the next time <event_name> is seen.
 
         This method can be used to await any incoming event. It is
-        particularly handy when waiting for an outside (of HAutomate)
+        particularly handy when waiting for an outside (of Hautomate)
         event to be pushed into the platform.
         """
         evt = self._event_waiters[event_name.upper()]

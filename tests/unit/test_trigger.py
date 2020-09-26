@@ -5,14 +5,14 @@ from ward import test, each
 from hautomate.util.async_ import safe_sync
 from hautomate.intent import Intent
 from hautomate.apis import trigger
-from hautomate import HAutomate
+from hautomate import Hautomate
 
 from tests.fixtures import cfg_hauto
 
 
 @test('Trigger API exposes waiters', tags=['unit'])
 async def _(cfg=cfg_hauto):
-    hauto = HAutomate(cfg)
+    hauto = Hautomate(cfg)
     await hauto.start()
 
     # queue up a event fire and then wait on it
@@ -40,7 +40,7 @@ async def _(
         're_match'
     )
 ):
-    hauto = HAutomate(cfg)
+    hauto = Hautomate(cfg)
     await hauto.start()
     counter = 0
 

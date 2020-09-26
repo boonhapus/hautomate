@@ -9,7 +9,7 @@ from hautomate.check import (
     Check, Cooldown, Throttle, Debounce,
     check, throttle, debounce
 )
-from hautomate import HAutomate
+from hautomate import Hautomate
 
 from tests.fixtures import cfg_hauto
 
@@ -51,7 +51,7 @@ _TRIALS = {
 
 @fixture(scope='module')
 def hauto(cfg=cfg_hauto):
-    return HAutomate(cfg)
+    return Hautomate(cfg)
 
 
 @fixture(scope='module')

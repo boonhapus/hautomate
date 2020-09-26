@@ -16,13 +16,13 @@ class Context:
     """
     def __init__(
         self,
-        hauto: 'HAutomate',
+        hauto: 'Hautomate',
         event: str,
         *,
         event_data: Dict,
         target: 'Intent',
         when: pendulum.DateTime,
-        parent: Union['Intent', 'HAutomate']
+        parent: Union['Intent', 'Hautomate']
     ):
         self._id = next(_context_id)
         self._hauto = hauto
@@ -36,7 +36,7 @@ class Context:
     @property
     def hauto(self):
         """
-        Grab a reference to HAutomate.
+        Grab a reference to Hautomate.
         """
         return self._hauto
 

@@ -3,14 +3,14 @@ import asyncio
 from ward import test
 
 from hautomate.intent import Intent
-from hautomate import HAutomate
+from hautomate import Hautomate
 
 from tests.fixtures import cfg_hauto
 
 
-@test('HAutomate intent runner handles exceptions gracefully', tags=['unit'])
+@test('Hautomate intent runner handles exceptions gracefully', tags=['unit'])
 async def _(cfg=cfg_hauto):
-    hauto = HAutomate(cfg)
+    hauto = Hautomate(cfg)
 
     async def errored(ctx):
         raise Exception('UserError')
@@ -26,9 +26,9 @@ async def _(cfg=cfg_hauto):
     await hauto.start()
 
 
-@test('HAutomate intent runner checks if intents can run', tags=['unit'])
+@test('Hautomate intent runner checks if intents can run', tags=['unit'])
 async def _(cfg=cfg_hauto):
-    hauto = HAutomate(cfg)
+    hauto = Hautomate(cfg)
     intent = Intent('DUMMY', lambda ctx: None, limit=1)
     hauto.bus.subscribe('DUMMY', intent)
 
@@ -41,7 +41,7 @@ async def _(cfg=cfg_hauto):
 
 @test('EventBus adds all callables as Intents', tags=['unit'])
 def _(cfg=cfg_hauto):
-    hauto = HAutomate(cfg)
+    hauto = Hautomate(cfg)
 
     # with a naked callable
     intent = lambda ctx, *a, **kw: None
@@ -60,7 +60,7 @@ def _(cfg=cfg_hauto):
 
 @test('EventBus fires events to 0..N receivers', tags=['unit'])
 async def _(cfg=cfg_hauto):
-    hauto = HAutomate(cfg)
+    hauto = Hautomate(cfg)
 
     for _ in range(5):
         hauto.bus.subscribe('DUMMY', lambda ctx, *a, **kw: None)
@@ -74,7 +74,7 @@ async def _(cfg=cfg_hauto):
 
 @test('EventBus waits for Intents to complete', tags=['unit'])
 async def _(cfg=cfg_hauto):
-    hauto = HAutomate(cfg)
+    hauto = Hautomate(cfg)
     i = 0
 
     async def _dummy(ctx):
@@ -111,7 +111,7 @@ async def _(cfg=cfg_hauto):
 
 @test('EventBus processes many events', tags=['unit'])
 async def _(cfg=cfg_hauto):
-    hauto = HAutomate(cfg)
+    hauto = Hautomate(cfg)
     intent_1 = hauto.bus.subscribe('DUMMY', intent=lambda ctx, *a, **kw: 1)
     intent_2 = hauto.bus.subscribe('DUMMY', intent=lambda ctx, *a, **kw: 2)
     intent_3 = hauto.bus.subscribe('DUMMY', intent=lambda ctx, *a, **kw: 3)

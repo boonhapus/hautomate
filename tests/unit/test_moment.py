@@ -11,7 +11,7 @@ from hautomate.settings import HautoConfig
 from hautomate.context import Context
 from hautomate.intent import Intent
 from hautomate.apis import moment
-from hautomate import HAutomate
+from hautomate import Hautomate
 
 from tests.fixtures import cfg_data_hauto, cfg_hauto
 
@@ -28,7 +28,7 @@ async def _(
     data['api_configs'] = {'moment': {'speed': speed}}
     cfg = HautoConfig(**data)
 
-    hauto = HAutomate(cfg)
+    hauto = Hautomate(cfg)
     await hauto.start()
 
     assert moment.scale_time(0.25, to='realtime') == seconds_in_realtime
@@ -49,7 +49,7 @@ async def _(
     data['api_configs'] = {'moment': {'speed': speed, 'epoch': epoch}}
     cfg = HautoConfig(**data)
 
-    hauto = HAutomate(cfg)
+    hauto = Hautomate(cfg)
     await hauto.start()
 
     real_beg = time.perf_counter()
@@ -69,7 +69,7 @@ async def _(
 
 @test('Moment API notifies on event loop slippage', tags=['unit'])
 async def _(cfg=cfg_hauto):
-    hauto = HAutomate(cfg)
+    hauto = Hautomate(cfg)
     await hauto.start()
 
     @safe_sync
@@ -122,7 +122,7 @@ async def _(
         'every'
     )
 ):
-    hauto = HAutomate(cfg)
+    hauto = Hautomate(cfg)
     await hauto.start()
     method = getattr(moment, method_name)
     a  = sig.get('args', tuple())
@@ -142,7 +142,7 @@ async def _(
     cfg=cfg_hauto,
     dt_or_time=each(None, pendulum.parse('0:00:00', exact=True))
 ):
-    hauto = HAutomate(cfg)
+    hauto = Hautomate(cfg)
     await hauto.start()
     now = pendulum.now()
     chk = MomentaryCheck(dt_or_time or now)

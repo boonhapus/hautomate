@@ -1,1 +1,1 @@
-from hautomate.core import HAutomate
+from hautomate.core import Hautomate

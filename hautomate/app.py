@@ -65,11 +65,11 @@ _log = logging.getLogger(__name__)
 # class App(metaclass=AppMeta):  # TBD
 class App:
     """
-    Base class for a User's entrypoint into HAutomate.
+    Base class for a User's entrypoint into Hautomate.
 
     Parameters
     ----------
-    hauto : HAutomate
+    hauto : Hautomate
       hautomate!
 
     name : str = None
@@ -103,7 +103,7 @@ class App:
 
 class AppRegistry:
     """
-    A registry and loader for all Apps living within HAutomate.
+    A registry and loader for all Apps living within Hautomate.
 
     The registry lives on the Hautomate instance and can be iterated
     over as if it were a collection. Additionally, Users can grab the

@@ -8,7 +8,7 @@ from hautomate.errors import HautoError
 from hautomate.intent import Intent
 from hautomate.api import API, api_method
 from hautomate.app import App
-from hautomate import HAutomate
+from hautomate import Hautomate
 
 from tests.fixtures import cfg_data_hauto, cfg_hauto
 
@@ -36,7 +36,7 @@ def _(cfg_data=cfg_data_hauto):
         'dummy_api': None
     }
 
-    hauto = HAutomate(cfg)
+    hauto = Hautomate(cfg)
     hauto.apis._load_all_apis(None)
 
     # apps are loaded after APIs are, in all cases .. so we simulate that here
@@ -84,7 +84,7 @@ def _(cfg_data=cfg_data_hauto):
         'dummy_api': None
     }
 
-    hauto = HAutomate(cfg)
+    hauto = Hautomate(cfg)
     hauto.apis._load_all_apis(None)
 
     # apps are loaded after APIs are, in all cases .. so we simulate that here
@@ -132,7 +132,7 @@ def _(cfg_data=cfg_data_hauto):
         'dummy_api': None
     }
 
-    hauto = HAutomate(cfg)
+    hauto = Hautomate(cfg)
     hauto.apis._load_all_apis(None)
 
     @DummyApi.foo('DUMMY')
@@ -179,7 +179,7 @@ def _(cfg_data=cfg_data_hauto):
     data.pop('api_configs', None)
     cfg = HautoConfig(**data)
 
-    hauto = HAutomate(cfg)
+    hauto = Hautomate(cfg)
     hauto.apis._load_all_apis(None)
     assert hauto.apis.trigger.name == 'trigger'
     assert hauto.apis.moment.name == 'moment'
@@ -190,7 +190,7 @@ def _(cfg_data=cfg_data_hauto):
 
 @test('APIs expose .fire(), ...', tags=['unit'])
 async def _(cfg=cfg_hauto):
-    hauto = HAutomate(cfg)
+    hauto = Hautomate(cfg)
     hauto.apis._load_all_apis(None)
     counter = 0
 

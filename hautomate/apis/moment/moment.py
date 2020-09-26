@@ -24,7 +24,7 @@ class Moment(API):
 
     Parameters
     ----------
-    hauto : HAutomate
+    hauto : Hautomate
       hautomate!
 
     resolution : float = 0.25
@@ -55,13 +55,13 @@ class Moment(API):
     @safe_sync
     def on_ready(self, ctx: Context):
         """
-        Called once HAutomate is ready to begin processing events.
+        Called once Hautomate is ready to begin processing events.
         """
         asyncio.create_task(self._tick())
 
     async def _tick(self):
         """
-        Internal heartbeat to determine the health of HAutomate.
+        Internal heartbeat to determine the health of Hautomate.
         """
         while self.hauto.is_ready:
             asyncio.create_task(self.fire(EVT_TIME_UPDATE))
@@ -93,7 +93,7 @@ class Moment(API):
         Convert the input time to real or virtual time.
 
         This is mainly used for interacting with time based systems
-        outside of HAutomate.
+        outside of Hautomate.
 
         Parameters
         ----------

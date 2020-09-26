@@ -22,7 +22,7 @@ from hautomate.app import AppRegistry
 _log = logging.getLogger(__name__)
 
 
-class HAutomate:
+class Hautomate:
     """
     Core orchestrator for the automation environment.
     """
@@ -38,21 +38,21 @@ class HAutomate:
     @property
     def is_ready(self):
         """
-        Determine whether or not HAutomate is ready.
+        Determine whether or not Hautomate is ready.
         """
         return self._state == CoreState.ready
 
     @property
     def is_running(self) -> bool:
         """
-        Determine whether or not HAutomate is running.
+        Determine whether or not Hautomate is running.
         """
         return self._state not in (CoreState.stopped, CoreState.finished)
 
     @property
     def now(self) -> pendulum.DateTime:
         """
-        Get HAutomate's current time.
+        Get Hautomate's current time.
         """
         if not self.is_ready:
             return pendulum.now(self.config.timezone)
@@ -130,7 +130,7 @@ class EventBus:
     The EventBus is responsible for communicating events throughout the
     Hautomate platform. Events are consumed in a pub-sub architecture.
     """
-    def __init__(self, hauto: 'HAutomate'):
+    def __init__(self, hauto: 'Hautomate'):
         self.hauto = hauto
         self._events = collections.defaultdict(list)
 
@@ -148,7 +148,7 @@ class EventBus:
         self,
         event: str,
         *,
-        parent: Union[Intent, HAutomate],
+        parent: Union[Intent, Hautomate],
         wait: str=None,
         **event_data
     ):
@@ -160,7 +160,7 @@ class EventBus:
         event : str
             name of trigger event
 
-        parent : Intent or HAutomate
+        parent : Intent or Hautomate
             source of the event trigger
 
         wait : str

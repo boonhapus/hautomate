@@ -3,7 +3,7 @@ import enum
 
 class CoreState(enum.Enum):
     """
-    Represent the current state of HAutomate.
+    Represent the current state of Hautomate.
     """
     initialized = 'INITIALIZED'
     starting = 'STARTING'

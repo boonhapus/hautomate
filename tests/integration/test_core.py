@@ -4,14 +4,14 @@ from ward import test
 
 from hautomate.events import EVT_READY
 from hautomate.enums import CoreState
-from hautomate import HAutomate
+from hautomate import Hautomate
 
 from tests.fixtures import cfg_hauto
 
 
-@test('HAutomate.start, .stop', tags=['integration'])
+@test('Hautomate.start, .stop', tags=['integration'])
 async def _(cfg=cfg_hauto):
-    hauto = HAutomate(cfg)
+    hauto = Hautomate(cfg)
     assert hauto._state == CoreState.initialized
 
     # simulate some intents
@@ -33,12 +33,12 @@ async def _(cfg=cfg_hauto):
     assert hauto.is_running is False
 
 
-@test('HAutomate.run', tags=['integration'])
+@test('Hautomate.run', tags=['integration'])
 def _(cfg=cfg_hauto):
     # explicitly get an event_loop so that we don't conflict with Ward
     loop = asyncio.new_event_loop()
 
-    hauto = HAutomate(cfg, loop=loop)
+    hauto = Hautomate(cfg, loop=loop)
 
     async def _pipeline(ctx):
         await hauto.apis.trigger.wait_for('SOME_FOREIGN_EVENT')

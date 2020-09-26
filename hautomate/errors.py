@@ -2,7 +2,7 @@
 
 class HautoError(Exception):
     """
-    Base exception for the HAutomate library.
+    Base exception for the Hautomate library.
     """
 
 

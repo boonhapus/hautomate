@@ -56,7 +56,7 @@ class API:
     @property
     def hauto(self):
         """
-        The HAutomate instance.
+        The Hautomate instance.
         """
         return self._hauto
 
@@ -86,7 +86,7 @@ class API:
 
 class APIRegistry:
     """
-    A registry and loader for all APIs living within HAutomate.
+    A registry and loader for all APIs living within Hautomate.
     """
     def __init__(self, hauto):
         self.hauto = hauto
