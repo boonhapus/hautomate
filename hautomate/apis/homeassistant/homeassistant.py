@@ -40,7 +40,7 @@ class HassInterface:
         TODO
         """
         if self.am_component:
-            r = await self._hass.async_call(
+            r = await self._hass.services.async_call(
                 domain,
                 service,
                 service_data,
@@ -55,7 +55,7 @@ class HassInterface:
         TODO
         """
         if self.am_component:
-            self._hass.async_fire(event_type, event_data)
+            self._hass.bus.async_fire(event_type, event_data)
             return
         # do websocket stuff
 
