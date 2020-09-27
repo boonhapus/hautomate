@@ -64,6 +64,12 @@ class HautoConfig(Settings):
 
     @validator('api_configs', pre=True, always=True)
     def is_api_config(cls, data: dict):
+
+        # ensure we have our defaults
+        for api in ('trigger', 'moment'):
+            if api not in data:
+                data[api] = {}
+
         for api_name, cfg_data in data.copy().items():
             try:
                 importlib.import_module(f'hautomate.apis.{api_name}.{api_name}')

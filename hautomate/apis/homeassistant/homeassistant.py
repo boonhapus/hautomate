@@ -59,13 +59,13 @@ class HassInterface:
         # do websocket stuff
 
 
-class HomeAssistant(API, name='hass'):
+class HomeAssistant(API):
     """
     TODO
     """
     def __init__(self, hauto, *, feed: str, hass_interface: HASS=None):
         self.feed = feed
-        self.hass_interface = HassInterface(feed, hass)
+        self.hass_interface = HassInterface(feed, hass_interface)
         super().__init__(hauto)
 
     # Listeners and Internal Methods
