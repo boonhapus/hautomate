@@ -21,8 +21,13 @@ class Config(Settings):
 
     Attributes
     ----------
+    feed : str, one of 'custom_component' or 'websocket', default 'websocket'
+      where to source your HomeAssistant data from
+
+    hass_interface : HomeAssistant, default None
+      the homeassistant inferface
     """
-    feed: Feed
+    feed: Feed = 'WEBSOCKET'
     hass_interface: Optional[HomeAssistant] = None
 
     @validator('feed', pre=True)
