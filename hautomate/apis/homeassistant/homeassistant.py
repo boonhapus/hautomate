@@ -1,8 +1,10 @@
+from typing import Union
 import asyncio
 import logging
 
 from homeassistant.core import HomeAssistant as HASS
 
+from hautomate.apis.homeassistant.compat import HassWebConnector
 from hautomate.apis.homeassistant.enums import HassFeed
 from hautomate.context import Context
 from hautomate.api import API, api_method, public_method
@@ -13,13 +15,16 @@ _log = logging.getLogger(__name__)
 
 class HassInterface:
 
-    def __init__(self, feed, hass):
+    def __init__(
+        self,
+        feed: HassFeed,
+        hass: Union[HASS, HassWebConnector],
+    ):
         self.feed = feed
         self._hass = hass
-        self._ws = None
 
         if not self.am_component:
-            asyncio.create_task(self._connect_to_websocket())
+            asyncio.create_task(self._hass.ws_auth_flow())
 
     @property
     def am_component(self) -> bool:
@@ -28,43 +33,49 @@ class HassInterface:
         """
         return self.feed == HassFeed.custom_component
 
-    async def _connect_to_websocket(self):
-        """
-        """
-        pass
-
     #
 
-    async def call_service(self, domain: str, service: str, service_data: dict):
+    async def call_service(
+        self,
+        domain: str,
+        service: str,
+        service_data: dict
+    ) -> Union[bool, None]:
         """
         TODO
         """
         if self.am_component:
-            r = await self._hass.services.async_call(
-                domain,
-                service,
-                service_data,
-                # blocking=False,
-                # limit=10,
-            )
-            return r
-        # do websocket stuff
+            fn = self._hass.service.async_call
+        else:
+            fn = self._hass.call_service
 
-    async def fire_event(self, event_type: str, event_data: dict):
+        return await fn(domain, service, service_data)#, blocking=False, limit=10)
+
+    async def fire_event(self, event_type: str, event_data: dict) -> None:
         """
         TODO
         """
         if self.am_component:
             self._hass.bus.async_fire(event_type, event_data)
-            return
-        # do websocket stuff
+        else:
+            await self._hass.fire_event(event_type, event_data)
 
 
 class HomeAssistant(API):
     """
     TODO
     """
-    def __init__(self, hauto, *, feed: str, hass_interface: HASS=None):
+    def __init__(
+        self,
+        hauto,
+        *,
+        feed: str,
+        hass_interface: HASS=None,
+        **hass_interface_kw
+    ):
+        if hass_interface is None:
+            hass_interface = HassWebConnector(loop=hauto.loop, **hass_interface_kw)
+
         self.feed = feed
         self.hass_interface = HassInterface(feed, hass_interface)
         super().__init__(hauto)
@@ -122,7 +133,6 @@ class HomeAssistant(API):
         event_data: dict = None
           TODO
         """
-        coro = self.hass_interface.fire(event_type, event_data)
-        asyncio.create_task(coro)
+        await self.hass_interface.fire_event(event_type, event_data)
 
     # Intents
