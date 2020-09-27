@@ -18,7 +18,6 @@ nox.options.sessions = [
 @nox.session(python=[py37, py38])
 def test(session):
     session.install('-U', '.[test]')
-    session.install('-U', '.[homeassistant]')  # need to figure this out longterm
     session.run('coverage', 'run', '-m', 'ward', *session.posargs)
     session.notify('report')
 
