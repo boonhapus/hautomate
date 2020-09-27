@@ -25,7 +25,10 @@ async def _(
     data['api_configs'] = {
         'homeassistant': {
             'feed': feed,
-            'hass_interface': hass
+            'hass_interface': hass,
+            'host': 'http://hautomate.boonhap.us',
+            'port': 8823,
+            'access_token': 'damn, granted!'
         }
     }
 
