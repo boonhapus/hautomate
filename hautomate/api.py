@@ -41,10 +41,10 @@ class API:
     instances = {}
 
     def __init_subclass__(cls, name: str=None, **kwargs):
-        super().__init_subclass__(**kwargs)
         name = name or cls.__name__.lower()
         cls.subclasses[name] = cls
         cls.name = name
+        super().__init_subclass__(**kwargs)
 
     def __init__(self, hauto):
         self._hauto = hauto
@@ -100,6 +100,7 @@ class APIRegistry:
         An Intent which loads all APIs.
         """
         for name, api_cls in API.subclasses.items():
+
             try:
                 cfg = self.hauto.config.api_configs[name]
             except KeyError:

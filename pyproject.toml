@@ -39,6 +39,7 @@ test = [
     "coverage",
     "nox",
     "ward",
+    "homeassistant"
 ]
 
 [tool.coverage.run]
