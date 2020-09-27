@@ -19,7 +19,7 @@ class Trigger(API):
         super().__init__(hauto)
         self._event_waiters = collections.defaultdict(lambda: asyncio.Event())
 
-    #
+    # Listeners and Internal Methods
 
     @safe_sync
     def on_start(self, ctx: Context):
@@ -43,7 +43,7 @@ class Trigger(API):
         evt.set()
         evt.clear()
 
-    # PUBLIC METHODS
+    # Public Methods
 
     @public_method
     async def wait_for(self, event_name: str, *, timeout: float=None):
