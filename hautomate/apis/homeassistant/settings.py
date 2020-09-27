@@ -1,18 +1,10 @@
 from typing import Optional
-import enum
 
 from homeassistant.core import HomeAssistant
 from pydantic import validator
 
+from hautomate.apis.homeassistant.enums import HassFeed
 from hautomate.settings import Settings
-
-
-class Feed(enum.Enum):
-    """
-    Represent the current state of an Intent.
-    """
-    custom_component = 'CUSTOM_COMPONENT'
-    websocket = 'WEBSOCKET'
 
 
 class Config(Settings):
@@ -27,7 +19,7 @@ class Config(Settings):
     hass_interface : HomeAssistant, default None
       the homeassistant inferface
     """
-    feed: Feed = 'WEBSOCKET'
+    feed: HassFeed = 'WEBSOCKET'
     hass_interface: Optional[HomeAssistant] = None
 
     @validator('feed', pre=True)
@@ -36,7 +28,7 @@ class Config(Settings):
 
     @validator('hass_interface')
     def _check_feed(cls, hass, values):
-        if values['feed'] == Feed.custom_component and hass is None:
+        if values['feed'] == HassFeed.custom_component and hass is None:
             raise ValueError('regression error, the custom component seems to be broken!')
 
         return hass

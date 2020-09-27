@@ -3,6 +3,7 @@ import logging
 
 from homeassistant.core import HomeAssistant as HASS
 
+from hautomate.apis.homeassistant.enums import HassFeed
 from hautomate.context import Context
 from hautomate.api import API, api_method, public_method
 
@@ -25,7 +26,7 @@ class HassInterface:
         """
         Determine if the interface is a CUSTOM_COMPONENT.
         """
-        return self.feed == 'CUSTOM_COMPONENT'
+        return self.feed == HassFeed.custom_component
 
     async def _connect_to_websocket(self):
         """
