@@ -45,7 +45,7 @@ class HassInterface:
         TODO
         """
         if self.am_component:
-            fn = self._hass.service.async_call
+            fn = self._hass.services.async_call
         else:
             fn = self._hass.call_service
 
@@ -111,9 +111,6 @@ class HomeAssistant(API):
         service_data : dict = None
           TODO
         """
-        if service_data is None:
-            service_data = {}
-
         coro = self.hass_interface.call_service(domain, service, service_data)
         task = asyncio.create_task(coro)
 
