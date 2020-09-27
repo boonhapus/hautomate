@@ -1,6 +1,7 @@
 from ward import test, each, raises
 
 from homeassistant.core import HomeAssistant
+from hautomate.apis.homeassistant.events import HASS_EVENT_RECEIVE
 from hautomate.settings import HautoConfig
 from hautomate import Hautomate
 import pydantic
