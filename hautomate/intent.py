@@ -55,6 +55,23 @@ class Intent(Asyncable):
         self.func = method
         self._app = method.__self__
         self._app.intents.append(self)
+        self._state = IntentState.ready
+
+    @Asyncable
+    async def pause(self):
+        """
+        Set the Intent to paused.
+
+        A paused Intent will not fire.
+        """
+        self._state = IntentState.paused
+
+    @Asyncable
+    async def unpause(self):
+        """
+        Set the Intent to ready.
+        """
+        self._state = IntentState.ready
 
     async def can_run(self, ctx: Context, *a, **kw) -> bool:
         """
@@ -63,8 +80,8 @@ class Intent(Asyncable):
         if self.runs >= self.limit > 0:
             return False
 
-        # if self._state == IntentState.cancelled:
-        #     return False
+        if self._state in (IntentState.paused, IntentState.cancelled):
+            return False
 
         if not await self._all_checks_pass(ctx):
             return False

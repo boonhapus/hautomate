@@ -11,7 +11,7 @@ from hautomate.context import Context
 from hautomate.intent import Intent
 from hautomate.events import (
     _META_EVENTS, _EVT_INIT, EVT_START, EVT_READY, EVT_CLOSE,
-    EVT_INTENT_START, EVT_INTENT_END,
+    EVT_INTENT_SUBSCRIBE, EVT_INTENT_START, EVT_INTENT_END,
     EVT_ANY
 )
 from hautomate.enums import CoreState
@@ -142,6 +142,11 @@ class EventBus:
             intent = Intent(event, intent)
 
         self._events[intent.event].append(intent)
+
+        if self.is_ready:
+            coro = self.fire(EVT_INTENT_SUBSCRIBE, parent=self.hauto, created_intent=intent)
+            asyncio.create_task(coro)
+
         return intent
 
     async def fire(
