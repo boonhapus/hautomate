@@ -143,11 +143,8 @@ class EventBus:
             intent = Intent(event, intent)
 
         self._events[intent.event].append(intent)
-
-        if self.hauto.is_ready:
-            coro = self.fire(EVT_INTENT_SUBSCRIBE, parent=self.hauto, created_intent=intent)
-            asyncio.create_task(coro)
-
+        coro = self.fire(EVT_INTENT_SUBSCRIBE, parent=self.hauto, created_intent=intent)
+        asyncio.create_task(coro)
         return intent
 
     async def fire(
