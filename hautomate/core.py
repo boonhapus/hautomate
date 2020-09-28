@@ -27,6 +27,7 @@ class Hautomate:
     Core orchestrator for the automation environment.
     """
     def __init__(self, config: HautoConfig, *, loop: AbstractEventLoop=None):
+        self._state = CoreState.initializing
         self.loop = loop or asyncio.get_event_loop()
         self.config = config
         self.bus = EventBus(self)
@@ -143,7 +144,7 @@ class EventBus:
 
         self._events[intent.event].append(intent)
 
-        if self.is_ready:
+        if self.hauto.is_ready:
             coro = self.fire(EVT_INTENT_SUBSCRIBE, parent=self.hauto, created_intent=intent)
             asyncio.create_task(coro)
 

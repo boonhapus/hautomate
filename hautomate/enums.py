@@ -5,6 +5,7 @@ class CoreState(enum.Enum):
     """
     Represent the current state of Hautomate.
     """
+    initializing = 'INITIALIZING'
     initialized = 'INITIALIZED'
     starting = 'STARTING'
     ready = 'READY'
