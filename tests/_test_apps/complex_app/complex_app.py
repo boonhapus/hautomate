@@ -1,4 +1,10 @@
+import logging
+
+from hautomate.apis import trigger
 from hautomate.app import App
+
+
+_log = logging.getLogger(__name__)
 
 
 class MyApp(App):
@@ -11,6 +17,10 @@ class MyApp(App):
 
     # async def on_dummy_event(self, ctx):
     #     pass
+
+    # @trigger.on('DUMMY')
+    # async def some_intent(self, ctx):
+    #     _log.info('ayyyoooo')
 
 
 def setup(hauto):
