@@ -74,7 +74,7 @@ class Hautomate:
 
         # don't fire meta events during startup/shutdown
         if ctx.event not in _META_EVENTS and self.is_ready:
-            await self.bus.fire(EVT_INTENT_START, parent=self, wait='ALL_COMPLETED')
+            await self.bus.fire(EVT_INTENT_START, parent=self, wait='ALL_COMPLETED', started_intent=intent)
 
         try:
             await intent(ctx)
@@ -88,7 +88,7 @@ class Hautomate:
 
             # don't fire meta events during startup/shutdown
             if ctx.event not in _META_EVENTS and self.is_ready:
-                await self.bus.fire(EVT_INTENT_END, parent=self, wait='ALL_COMPLETED')
+                await self.bus.fire(EVT_INTENT_END, parent=self, wait='ALL_COMPLETED', ended_intent=intent)
 
     #
 
