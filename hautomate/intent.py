@@ -57,8 +57,7 @@ class Intent(Asyncable):
         self._app.intents.append(self)
         self._state = IntentState.ready
 
-    @Asyncable
-    async def pause(self):
+    def pause(self):
         """
         Set the Intent to paused.
 
@@ -66,8 +65,7 @@ class Intent(Asyncable):
         """
         self._state = IntentState.paused
 
-    @Asyncable
-    async def unpause(self):
+    def unpause(self):
         """
         Set the Intent to ready.
         """
