@@ -128,7 +128,13 @@ class Intent(Asyncable):
         statistics on the Intent itself.
         """
         self.runs += 1
+
+        # TODO needed here to beat 2 copies of the same intent fired simultaneously?
+        # if self.limit - self.runs == -1:
+        #     return
+
+        r = await super().__call__(ctx, *a, loop=ctx.hauto.loop, **kw)
         self.last_ran = ctx.hauto.now
-        return await super().__call__(ctx, *a, loop=ctx.hauto.loop, **kw)
+        return r
 
     __call__ = __runner__
