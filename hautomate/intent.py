@@ -140,3 +140,11 @@ class Intent(Asyncable):
         return r
 
     __call__ = __runner__
+
+    def __repr__(self):
+        if self._app is not None:
+            name = f'{self._app.__name__}.{self.func.__name__}'
+        else:
+            name = f'unbound {self.func.__name__}'
+
+        return f'<Intent {name}>'

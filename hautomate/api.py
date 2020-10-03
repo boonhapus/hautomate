@@ -100,7 +100,6 @@ class APIRegistry:
         An Intent which loads all APIs.
         """
         for name, api_cls in API.subclasses.items():
-
             try:
                 cfg = self.hauto.config.api_configs[name]
             except KeyError:
