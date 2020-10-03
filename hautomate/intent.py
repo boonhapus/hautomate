@@ -127,17 +127,15 @@ class Intent(Asyncable):
         Akin to __call__, but used in an async context and tracks
         statistics on the Intent itself.
         """
-        self.runs += 1
-
         # break race condition where more than 1 copy of an Intent can
         # qualify all check during the same iteration of the event loop,
         # but only one should actually run.
-        if self.runs > self.limit > 0:
+        if self.runs + 1 > self.limit > 0:
             return
 
-        r = await super().__call__(ctx, *a, loop=ctx.hauto.loop, **kw)
+        self.runs += 1
         self.last_ran = ctx.hauto.now
-        return r
+        return await super().__call__(ctx, *a, loop=ctx.hauto.loop, **kw)
 
     __call__ = __runner__
 
