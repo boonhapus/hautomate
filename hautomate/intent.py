@@ -129,9 +129,11 @@ class Intent(Asyncable):
         """
         self.runs += 1
 
-        # TODO needed here to beat 2 copies of the same intent fired simultaneously?
-        # if self.limit - self.runs == -1:
-        #     return
+        # break race condition where more than 1 copy of an Intent can
+        # qualify all check during the same iteration of the event loop,
+        # but only one should actually run.
+        if self.limit - self.runs < 0:
+            return
 
         r = await super().__call__(ctx, *a, loop=ctx.hauto.loop, **kw)
         self.last_ran = ctx.hauto.now
