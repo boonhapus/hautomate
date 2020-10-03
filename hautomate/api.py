@@ -192,7 +192,7 @@ class api_method:
             # Declarative should only happen during the pre-start phase, on _EVT_INIT.
             # If we're finding that users are calling the declarative version without
             # a fn keyword argument, then they've likely made a mistake.
-            if self.api.hauto._state != CoreState.starting:
+            if self.api.hauto._state not in (CoreState.initialized, CoreState.starting):
                 __qualname__ = f'{self.api.name}.{self.intent_factory.__name__}'
                 _log.warning(
                     'detected declarative context after startup!\ndid you forget to '
