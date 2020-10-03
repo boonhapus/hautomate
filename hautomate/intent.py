@@ -132,7 +132,7 @@ class Intent(Asyncable):
         # break race condition where more than 1 copy of an Intent can
         # qualify all check during the same iteration of the event loop,
         # but only one should actually run.
-        if self.limit - self.runs < 0:
+        if self.runs > self.limit > 0:
             return
 
         r = await super().__call__(ctx, *a, loop=ctx.hauto.loop, **kw)
