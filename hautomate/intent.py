@@ -1,5 +1,6 @@
 from typing import Callable
 import itertools as it
+import warnings
 import asyncio
 
 from hautomate.util.async_ import Asyncable
@@ -57,28 +58,44 @@ class Intent(Asyncable):
         self._app.intents.append(self)
         self._state = IntentState.ready
 
+    def cancel(self):
+        """
+        Permanently cancel the Intent.
+
+        A cancelled Intent will not fire.
+        """
+        self._state = IntentState.cancelled
+
     def pause(self):
         """
         Set the Intent to paused.
 
         A paused Intent will not fire.
         """
+        if self._state == IntentState.cancelled:
+            warnings.warn('intent is cancelled and cannot be paused!', RuntimeWarning)
+            return
+
         self._state = IntentState.paused
 
     def unpause(self):
         """
         Set the Intent to ready.
         """
+        if self._state == IntentState.cancelled:
+            warnings.warn('intent is cancelled and cannot be unpaused!', RuntimeWarning)
+            return
+
         self._state = IntentState.ready
 
     async def can_run(self, ctx: Context, *a, **kw) -> bool:
         """
         Determine if the intent can run.
         """
-        if self.runs >= self.limit > 0:
+        if self._state in (IntentState.paused, IntentState.cancelled):
             return False
 
-        if self._state in (IntentState.paused, IntentState.cancelled):
+        if self.runs >= self.limit > 0:
             return False
 
         if not await self._all_checks_pass(ctx):
@@ -115,8 +132,3 @@ class Intent(Asyncable):
         return await super().__call__(ctx, *a, loop=ctx.hauto.loop, **kw)
 
     __call__ = __runner__
-
-    def __repr__(self) -> str:
-        e = self.event
-        f = self.func
-        return f'<Intent(event="{e}", func={f}>'
