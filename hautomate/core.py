@@ -179,7 +179,10 @@ class EventBus:
         done, pending : set[Intents, ...]
         """
         event = event.upper()
-        intents = set(self._events[EVT_ANY])
+        intents = set()
+
+        if event not in _META_EVENTS:
+            intents.update(self._events[EVT_ANY])
 
         if event in self._events:
             intents.update(self._events[event])
