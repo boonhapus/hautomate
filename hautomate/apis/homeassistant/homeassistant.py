@@ -6,7 +6,7 @@ from homeassistant.const import EVENT_STATE_CHANGED
 from homeassistant.core import HomeAssistant as HASS, State
 
 from hautomate.apis.homeassistant.compat import HassWebConnector
-from hautomate.apis.homeassistant.const import (
+from hautomate.apis.homeassistant.events import (
     HASS_STATE_CHANGED, HASS_ENTITY_CREATE, HASS_ENTITY_REMOVE, HASS_ENTITY_UPDATE,
     HASS_ENTITY_CHANGE
 )
@@ -133,17 +133,20 @@ class HomeAssistant(API):
         old = ctx.event_data['old_state']
         new = ctx.event_data['new_state']
 
+        if (
+            old is not None
+            and new is not None
+            and old.state == new.state
+            and old.attributes != new.attributes
+        ):
+            await self.fire(HASS_ENTITY_UPDATE, entity_id=entity_id, old_entity=old, new_entity=new)
+
         if old is None:
             await self.fire(HASS_ENTITY_CREATE, entity_id=entity_id)
             return
 
         if new is None:
             await self.fire(HASS_ENTITY_REMOVE, entity_id=entity_id)
-            return
-
-        # ignore the case where an entity updates with the same exact information
-        if old.state == new.state and old.attributes != new.attributes:
-            await self.fire(HASS_ENTITY_UPDATE, entity_id=entity_id, old_entity=old, new_entity=new)
             return
 
         if old.state != new.state:
@@ -265,3 +268,45 @@ class HomeAssistant(API):
         await self.hass_interface.fire_event(event_type, event_data)
 
     # Intents
+
+    @api_method
+    def monitor(
+        self,
+        entity_id: str,
+        *,
+        mode: str='CHANGE',
+        fn: Callable,
+        **intent_kwargs
+    ) -> Intent:
+        """
+        Monitor an Entity for changes.
+
+
+
+        # https://www.home-assistant.io/docs/automation/trigger
+        #   /#numeric-state-trigger
+        #   /#state-trigger
+        """
+        _ACCEPTED_MODES = {
+            'CREATE': HASS_ENTITY_CREATE,     # when a new Entity is created
+            'REMOVE': HASS_ENTITY_REMOVE,     # when an existing Entity is removed
+            'CHANGE': HASS_ENTITY_CHANGE,     # when an Entity's state changes
+            'ATTRIBUTE': HASS_ENTITY_UPDATE,  # when an Entity's attributes change
+            'UPDATE': HASS_STATE_CHANGED      # literally any of the above
+        }
+
+        if mode.upper() not in _ACCEPTED_MODES:
+            raise ValueError(f"keyword argument 'mode' must be one of: {_ACCEPTED_MODES}, got '{mode}'")
+
+        event = _ACCEPTED_MODES[mode]
+
+        # need check for: entity_id checking
+        # need check for: from_state, to_state
+        # need check for: above_value, below_value
+        # - with logic for "inclusive" [off by default]
+        # need logic for duration-check
+        # - check which delegates, wait, delegates, returns?
+        # - subclass of debounce?
+
+        intent = Intent(event, fn=fn, **intent_kwargs)
+        return intent
