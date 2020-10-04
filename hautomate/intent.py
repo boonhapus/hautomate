@@ -113,8 +113,13 @@ class Intent(Asyncable):
         is evaluated - which keeps the cooldown from being evaluated if
         the Intent isn't meant to run in the first place.
         """
-        for coro in asyncio.as_completed([chk(ctx) for chk in self.checks]):
+        tasks = map(asyncio.create_task, [check(ctx) for check in self.checks])
+
+        for coro in asyncio.as_completed(tasks):
             if not await coro:
+                # signal to kill background-running tasks so we're not
+                # experiencing additional overhead from a long-awaiting check
+                [t.cancel() for t in tasks]
                 return False
 
         if self.cooldown is not None and not await self.cooldown(ctx):
