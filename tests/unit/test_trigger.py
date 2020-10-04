@@ -59,6 +59,6 @@ async def _(
     await hauto.bus.fire('DUMMY', wait='ALL_COMPLETED', parent='ward.test')
     assert counter == 1
 
-    # failing condition
+    # failing condition, counter should not increase
     await hauto.bus.fire('LOL', wait='ALL_COMPLETED', parent='ward.test')
     assert counter == 1

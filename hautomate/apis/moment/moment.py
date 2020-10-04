@@ -233,7 +233,8 @@ class Moment(API):
         delta: Union[float, pendulum.Duration],
         *,
         when: pendulum.DateTime=-1,
-        fn: Callable, **intent_kwargs
+        fn: Callable,
+        **intent_kwargs
     ) -> Intent:
         """
         Schedule an Intent to run after a short duration.
@@ -276,3 +277,9 @@ class Moment(API):
         intent_kwargs['checks'].append(cooldown)
         intent_kwargs['limit'] = intent_kwargs.get('limit', -1)
         return self.at(when, fn=fn, **intent_kwargs)
+
+    # TODO ... accept cron-like
+    #
+    # @api_method
+    # def cron(self, pattern: str, fn: Callable, **intent_kwargs) -> Intent:
+    #     pass
