@@ -14,7 +14,7 @@ class MomentaryCheck(Check):
     """
     def __init__(self, dt_or_time: Union[pendulum.DateTime, pendulum.Time]):
         self.dt_or_time = dt_or_time
-        super().__init__()
+        super().__init__(concurrency='async')
 
     async def __check__(self, ctx: Context) -> bool:
         moment = ctx.hauto.apis.moment

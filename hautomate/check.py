@@ -3,7 +3,7 @@ import asyncio
 
 import pendulum
 
-from hautomate.util.async_ import Asyncable, safe_sync
+from hautomate.util.async_ import Asyncable
 from hautomate.errors import HautoError
 from hautomate.context import Context
 
@@ -21,7 +21,7 @@ class Check(Asyncable):
     determines Intent viability must then live under a magic method
     __check__.
     """
-    def __init__(self, func: Callable=None, name: str=None):
+    def __init__(self, func: Callable=None, name: str=None, **kw):
         func = getattr(self, '__check__', func)
 
         if func is None:
@@ -31,7 +31,7 @@ class Check(Asyncable):
             )
 
         self.name = name
-        super().__init__(func)
+        super().__init__(func, **kw)
 
     def __call__(self, ctx: Context, *a, **kw) -> bool:
         return super().__call__(ctx, *a, loop=ctx.hauto.loop, **kw)
@@ -107,7 +107,7 @@ class Debounce(Cooldown):
         self.wait = wait
         self.edge = edge.upper()
         self.last_seen = None
-        super().__init__()
+        super().__init__(concurrency='async')
 
     def __check_leading__(self, now: pendulum.DateTime):
         try:
@@ -177,7 +177,7 @@ class Throttle(Cooldown):
         self._max_tokens = max_tokens
         self.tokens = max_tokens
         self.last_seen = None
-        super().__init__()
+        super().__init__(concurrency='safe_sync')
 
     @property
     def retry_after(self) -> int:
@@ -199,7 +199,6 @@ class Throttle(Cooldown):
         self.tokens = min(self.tokens + new_tokens, self._max_tokens)
         self.last_seen = now
 
-    @safe_sync
     def __check__(self, ctx: Context, *a, **kw) -> bool:
         self._adjust_capacity(ctx.when)
 
