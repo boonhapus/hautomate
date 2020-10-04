@@ -5,6 +5,7 @@ import logging
 from homeassistant.const import EVENT_STATE_CHANGED
 from homeassistant.core import HomeAssistant as HASS, State
 
+from hautomate.apis.homeassistant.checks import EntityCheck
 from hautomate.apis.homeassistant.compat import HassWebConnector
 from hautomate.apis.homeassistant.events import (
     HASS_STATE_CHANGED, HASS_ENTITY_CREATE, HASS_ENTITY_REMOVE, HASS_ENTITY_UPDATE,
@@ -272,8 +273,9 @@ class HomeAssistant(API):
     @api_method
     def monitor(
         self,
-        entity_id: str,
+        entity_id: str=None,
         *,
+        domain: str=None,
         mode: str='CHANGE',
         fn: Callable,
         **intent_kwargs
@@ -287,6 +289,12 @@ class HomeAssistant(API):
         #   /#numeric-state-trigger
         #   /#state-trigger
         """
+        if not any((entity_id, domain)) or all((entity_id, domain)):
+            raise ValueError(
+                "HomeAssistant.monitor accepts either 'entity_id' or 'domain', but not "
+                "both. "
+            )
+
         _ACCEPTED_MODES = {
             'CREATE': HASS_ENTITY_CREATE,     # when a new Entity is created
             'REMOVE': HASS_ENTITY_REMOVE,     # when an existing Entity is removed
@@ -296,14 +304,25 @@ class HomeAssistant(API):
         }
 
         if mode.upper() not in _ACCEPTED_MODES:
-            raise ValueError(f"keyword argument 'mode' must be one of: {_ACCEPTED_MODES}, got '{mode}'")
+            raise ValueError(
+                f"keyword argument 'mode' must be one of: {_ACCEPTED_MODES}, got '{mode}'"
+            )
 
         event = _ACCEPTED_MODES[mode]
 
-        # need check for: entity_id checking
+        try:
+            intent_kwargs['checks']
+        except KeyError:
+            intent_kwargs['checks'] = []
+
+        # ensure we're working with the correct entity
+        intent_kwargs['checks'].append(EntityCheck(entity_id=entity_id, domain=domain))
+
         # need check for: from_state, to_state
+
         # need check for: above_value, below_value
         # - with logic for "inclusive" [off by default]
+
         # need logic for duration-check
         # - check which delegates, wait, delegates, returns?
         # - subclass of debounce?
