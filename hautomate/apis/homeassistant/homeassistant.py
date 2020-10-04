@@ -1,13 +1,18 @@
-from typing import Union
+from typing import Union, Callable
 import asyncio
 import logging
 
-from homeassistant.core import HomeAssistant as HASS
+from homeassistant.const import EVENT_STATE_CHANGED
 from homeassistant.core import HomeAssistant as HASS, State
 
 from hautomate.apis.homeassistant.compat import HassWebConnector
+from hautomate.apis.homeassistant.const import (
+    HASS_STATE_CHANGED, HASS_ENTITY_CREATE, HASS_ENTITY_REMOVE, HASS_ENTITY_UPDATE,
+    HASS_ENTITY_CHANGE
+)
 from hautomate.apis.homeassistant.enums import HassFeed
 from hautomate.context import Context
+from hautomate.intent import Intent
 from hautomate.api import API, api_method, public_method
 
 
@@ -97,8 +102,60 @@ class HomeAssistant(API):
 
     async def on_hass_event_receive(self, ctx: Context):
         """
+        Called when Home Assistant forwards an event to Hauto.
         """
-        pass
+        event = ctx.event_data['hass_event']
+
+        if event.event_type == EVENT_STATE_CHANGED:
+            await self.fire(HASS_STATE_CHANGED, **event.data)
+            return
+
+        # UNUSED EVENTS
+        # - TIME_CHANGED
+        # - SERVICE_REGISTERED
+        # - CALL_SERVICE
+        # - SERVICE_EXECUTED
+        # - AUTOMATION_RELOADED
+        # - SCENE_RELOADED
+        # - PLATFORM_DISCOVERED
+        # - COMPONENT_LOADED
+        #
+        # - HOMEASSISTANT_CLOSE
+        # - HOMEASSISTANT_STOP
+        #
+        await self.fire(event.event_type, **event.data)
+
+    async def on_hass_state_changed(self, ctx: Context):
+        """
+        Called when a Home Assistant Entity is updated.
+        """
+        entity_id = ctx.event_data['entity_id']
+        old = ctx.event_data['old_state']
+        new = ctx.event_data['new_state']
+
+        if old is None:
+            await self.fire(HASS_ENTITY_CREATE, entity_id=entity_id)
+            return
+
+        if new is None:
+            await self.fire(HASS_ENTITY_REMOVE, entity_id=entity_id)
+            return
+
+        # ignore the case where an entity updates with the same exact information
+        if old.state == new.state and old.attributes != new.attributes:
+            await self.fire(HASS_ENTITY_UPDATE, entity_id=entity_id, old_entity=old, new_entity=new)
+            return
+
+        if old.state != new.state:
+            await self.fire(HASS_ENTITY_CHANGE, entity_id=entity_id, old_entity=old, new_entity=new)
+            return
+
+        _log.warning(
+            f'somehow we made it past all the possible state updates:'
+            f'\n    entity_id={entity_id}'
+            f'\n    old_state={old}'
+            f'\n    new_state={new}'
+        )
 
     # Public Methods
 
@@ -114,6 +171,7 @@ class HomeAssistant(API):
         self,
         domain: str,
         service: str,
+        *,
         service_data: dict=None,
         wait: bool=False
     ):
