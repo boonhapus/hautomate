@@ -178,6 +178,7 @@ class EventBus:
         -------
         done, pending : set[Intents, ...]
         """
+        event = event.upper()
         intents = set(self._events[EVT_ANY])
 
         if event in self._events:
