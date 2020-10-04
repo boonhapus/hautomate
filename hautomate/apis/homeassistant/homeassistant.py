@@ -3,6 +3,7 @@ import asyncio
 import logging
 
 from homeassistant.core import HomeAssistant as HASS
+from homeassistant.core import HomeAssistant as HASS, State
 
 from hautomate.apis.homeassistant.compat import HassWebConnector
 from hautomate.apis.homeassistant.enums import HassFeed
@@ -34,6 +35,18 @@ class HassInterface:
         return self.feed == HassFeed.custom_component
 
     #
+
+    def get_entity(self, entity_id: str) -> State:
+        """
+        TODO
+        """
+        if self.am_component:
+            return self._hass.states.get(entity_id)
+
+        raise NotImplementedError(
+            'recording a copy of all states has not yet been registered for '
+            'the websocket implementation'
+        )
 
     async def call_service(
         self,
@@ -89,6 +102,13 @@ class HomeAssistant(API):
 
     # Public Methods
 
+    @public_method  # safe_sync? depends on ws-interface impl.
+    def get_entity(self, entity_id: str) -> State:
+        """
+        Retrieve state of entity_id or None if not found.
+        """
+        return self.hass_interface.get_entity(entity_id)
+
     @public_method
     async def call_service(
         self,
@@ -116,6 +136,60 @@ class HomeAssistant(API):
 
         if wait:
             await task
+
+    @public_method
+    async def turn_on(self, entity_id: str, *, wait: bool=False, **data):
+        """
+        Generic service to turn devices on under any domain.
+
+        Parameters
+        ----------
+        entity_id : str
+          TODO
+
+        wait : bool = False
+          TODO
+
+        **data
+          service data to be sent into the service call
+        """
+        data['entity_id'] = entity_id
+        await self.call_service('homeassistant', 'turn_on', service_data=data, wait=wait)
+
+    @public_method
+    async def turn_off(self, entity_id: str, wait: bool=False):
+        """
+        Generic service to turn devices off under any domain.
+
+        Parameters
+        ----------
+        entity_id : str
+          TODO
+
+        wait : bool = False
+          TODO
+        """
+        data = {'entity_id': entity_id}
+        await self.call_service('homeassistant', 'turn_off', service_data=data, wait=wait)
+
+    @public_method
+    async def toggle(self, entity_id: str, *, wait: bool=False, **data):
+        """
+        Generic service to toggle devices on/off under any domain.
+
+        Parameters
+        ----------
+        entity_id : str
+          TODO
+
+        wait : bool = False
+          TODO
+
+        **data
+          service data to be sent into the service call
+        """
+        data['entity_id'] = entity_id
+        await self.call_service('homeassistant', 'turn_off', service_data=data, wait=wait)
 
     @public_method
     async def fire_event(self, event_type: str, event_data: dict=None):
