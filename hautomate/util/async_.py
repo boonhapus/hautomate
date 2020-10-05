@@ -74,7 +74,7 @@ class Asyncable:
                 'event loop or supplying the underlying callable'
             )
 
-    def __call_threadsafe__(self, main_loop: asyncio.AbstractEventLoop, *a, **kw):
+    def __call_threadsafe__(self, *a, main_loop: asyncio.AbstractEventLoop, **kw):
         """
         Threadsafe version of __call__.
 
@@ -106,7 +106,7 @@ class Asyncable:
 
     def __call__(self, *a, loop: asyncio.AbstractEventLoop=None, **kw) -> Awaitable:
         if not is_main_thread():
-            return self.__call_threadsafe__(main_loop=loop, *a, **kw)
+            return self.__call_threadsafe__(*a, main_loop=loop, **kw)
 
         loop = asyncio.get_event_loop()
 
