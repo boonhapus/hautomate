@@ -128,15 +128,12 @@ class public_method(Asyncable):
 
     This decorator simply grabs the instance that's already set up.
     """
-    def __init__(self, method):
-        self.method = method
-
     def __get__(self, instance: object, owner: API):
         if instance is None:
             instance = owner.instances[owner.name]
 
-        injected = ft.partial(self.method, instance)
-        instance.__dict__[self.method.__name__] = injected
+        injected = ft.partial(self.func, instance)
+        instance.__dict__[self.func.__name__] = injected
         return injected
 
 
