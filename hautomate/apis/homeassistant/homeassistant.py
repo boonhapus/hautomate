@@ -5,7 +5,9 @@ import logging
 from homeassistant.const import EVENT_STATE_CHANGED
 from homeassistant.core import HomeAssistant as HASS, State
 
-from hautomate.apis.homeassistant.checks import EntityCheck
+from hautomate.apis.homeassistant.checks import (
+    EntityCheck, DiscreteValueCheck, ContinuousValueCheck
+)
 from hautomate.apis.homeassistant.compat import HassWebConnector
 from hautomate.apis.homeassistant.events import (
     HASS_STATE_CHANGED, HASS_ENTITY_CREATE, HASS_ENTITY_REMOVE, HASS_ENTITY_UPDATE,
@@ -22,11 +24,7 @@ _log = logging.getLogger(__name__)
 
 class HassInterface:
 
-    def __init__(
-        self,
-        feed: HassFeed,
-        hass: Union[HASS, HassWebConnector],
-    ):
+    def __init__(self, feed: HassFeed, hass: Union[HASS, HassWebConnector]):
         self.feed = feed
         self._hass = hass
 
@@ -68,7 +66,7 @@ class HassInterface:
         else:
             fn = self._hass.call_service
 
-        return await fn(domain, service, service_data)#, blocking=False, limit=10)
+        return await fn(domain, service, service_data)  # , blocking=False, limit=10)
 
     async def fire_event(self, event_type: str, event_data: dict) -> None:
         """
@@ -143,11 +141,11 @@ class HomeAssistant(API):
             await self.fire(HASS_ENTITY_UPDATE, entity_id=entity_id, old_entity=old, new_entity=new)
 
         if old is None:
-            await self.fire(HASS_ENTITY_CREATE, entity_id=entity_id)
+            await self.fire(HASS_ENTITY_CREATE, entity_id=entity_id, new_entity=new)
             return
 
         if new is None:
-            await self.fire(HASS_ENTITY_REMOVE, entity_id=entity_id)
+            await self.fire(HASS_ENTITY_REMOVE, entity_id=entity_id, old_entity=old)
             return
 
         if old.state != new.state:
@@ -156,9 +154,9 @@ class HomeAssistant(API):
 
         _log.warning(
             f'somehow we made it past all the possible state updates:'
-            f'\n    entity_id={entity_id}'
-            f'\n    old_state={old}'
-            f'\n    new_state={new}'
+            f'\n\tentity_id={entity_id}'
+            f'\n\told_state={old}'
+            f'\n\tnew_state={new}'
         )
 
     # Public Methods
@@ -276,7 +274,14 @@ class HomeAssistant(API):
         entity_id: str=None,
         *,
         domain: str=None,
+        attribute: str=None,
         mode: str='CHANGE',
+        duration: Union[int, str]=None,
+        from_value: str=None,
+        to_value: str=None,
+        above_value: str=None,
+        below_value: str=None,
+        inclusive: bool=False,
         fn: Callable,
         **intent_kwargs
     ) -> Intent:
@@ -289,10 +294,33 @@ class HomeAssistant(API):
         #   /#numeric-state-trigger
         #   /#state-trigger
         """
-        if not any((entity_id, domain)) or all((entity_id, domain)):
-            raise ValueError(
-                "HomeAssistant.monitor accepts either 'entity_id' or 'domain', but not "
-                "both. "
+        # TODO
+        if duration is not None:
+            raise NotImplementedError('ComingSoon™')
+
+        if not any((entity_id, domain)):
+            raise TypeError(
+                "HomeAssistant.monitor() missing 1 required positional or keyword "
+                "argument: 'entity_id' or 'domain'"
+            )
+
+        if all((entity_id, domain)):
+            raise TypeError(
+                f"HomeAssistant.monitor() accepts either 'entity_id' or 'domain', but "
+                f"not both, got: entity_id={entity_id}, domain={domain}"
+            )
+
+        if any((from_value, to_value)) and any((above_value, below_value, inclusive)):
+            params = {
+                'from_value': from_value, 'to_value': to_value,
+                'above_value': above_value, 'below_value': below_value,
+                'inclusive': inclusive
+            }
+            used = ', '.join([f"'{k}'" for k, v in params.items() if v is not None])
+            raise TypeError(
+                f"may not specify values for all the following arguments: {used}; "
+                f"please mix 'from_value' and 'to_value' OR 'above_value', "
+                f"'below_value', and 'inclusive'"
             )
 
         _ACCEPTED_MODES = {
@@ -308,24 +336,50 @@ class HomeAssistant(API):
                 f"keyword argument 'mode' must be one of: {_ACCEPTED_MODES}, got '{mode}'"
             )
 
+        if mode == 'ATTRIBUTE' and attribute is None:
+            raise TypeError(
+                "missing required keyword argument 'attribute', please specify an "
+                "attribute to monitor"
+            )
+
+        # ...
+
+        checks = [EntityCheck(entity_id=entity_id, domain=domain)]
+
+        if mode in ('CHANGE', 'ATTRIBUTE', 'UPDATE'):
+            if from_value or to_value:
+                check = DiscreteValueCheck(
+                            from_=from_value,
+                            to_=to_value,
+                            attribute=attribute
+                        )
+                checks.append(check)
+
+            if above_value or below_value:
+                check = ContinuousValueCheck(
+                            above=above_value,
+                            below=below_value,
+                            inclusive=inclusive,
+                            attribute=attribute
+                        )
+                checks.append(check)
+
+            # TODO
+            #
+            # if len(checks) == 1 and duration:
+            #     check = ValueDurationCheck()
+            #     checks.append(check)
+            #
+            # need logic for duration-check
+            # - check which delegates, wait, delegates, returns?
+            # - subclass of debounce?
+
         event = _ACCEPTED_MODES[mode]
 
         try:
-            intent_kwargs['checks']
+            intent_kwargs['checks'].extend(checks)
         except KeyError:
-            intent_kwargs['checks'] = []
-
-        # ensure we're working with the correct entity
-        intent_kwargs['checks'].append(EntityCheck(entity_id=entity_id, domain=domain))
-
-        # need check for: from_state, to_state
-
-        # need check for: above_value, below_value
-        # - with logic for "inclusive" [off by default]
-
-        # need logic for duration-check
-        # - check which delegates, wait, delegates, returns?
-        # - subclass of debounce?
+            intent_kwargs['checks'] = checks
 
         intent = Intent(event, fn=fn, **intent_kwargs)
         return intent
