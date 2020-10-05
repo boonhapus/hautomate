@@ -147,9 +147,15 @@ class Intent(Asyncable):
     __call__ = __runner__
 
     def __repr__(self):
+        fn_name = (
+            getattr(self.func, '__qualname__', None)
+            or getattr(self.func, '__name__', None)
+            or str(self.func)
+        )
+
         if self._app is not None:
-            name = f'{self._app.__name__}.{self.func.__name__}'
+            name = fn_name
         else:
-            name = f'unbound {self.func.__name__}'
+            name = f'unbound {fn_name}'
 
         return f'<Intent {name}>'
