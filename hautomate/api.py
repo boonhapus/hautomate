@@ -132,7 +132,12 @@ class public_method(Asyncable):
         if instance is None:
             instance = owner.instances[owner.name]
 
-        injected = ft.partial(self.func, instance)
+        # happy to run this in the event loop directly
+        if self.concurrency == 'safe_sync':
+            injected = ft.partial(self.func, instance)
+        else:
+            injected = ft.partial(self.__call__, instance, loop=instance.hauto.loop)
+
         instance.__dict__[self.func.__name__] = injected
         return injected
 

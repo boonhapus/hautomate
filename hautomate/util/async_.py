@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, Awaitable
 import functools as ft
 import threading
 import asyncio
@@ -104,7 +104,7 @@ class Asyncable:
 
         return asyncio.run_coroutine_threadsafe(coro, main_loop).result()
 
-    def __call__(self, *a, loop: asyncio.AbstractEventLoop=None, **kw):
+    def __call__(self, *a, loop: asyncio.AbstractEventLoop=None, **kw) -> Awaitable:
         if not is_main_thread():
             return self.__call_threadsafe__(main_loop=loop, *a, **kw)
 
