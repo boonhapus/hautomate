@@ -40,8 +40,11 @@ class Trigger(API):
         who wait on the event to be awakened. The event is then cleared so that
         new waiters may block until the next event fire.
         """
-        fut = self._event_waiters.pop(ctx.event)
-        fut.set_result(ctx)
+        try:
+            fut = self._event_waiters.pop(ctx.event)
+            fut.set_result(ctx)
+        except KeyError:
+            pass
         # evt = self._event_waiters[ctx.event]
         # evt.set()
         # evt.clear()
