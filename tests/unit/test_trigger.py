@@ -1,8 +1,9 @@
 import asyncio
 
-from ward import test, each
+from ward import test, each, raises
 
 from hautomate.util.async_ import safe_sync
+from hautomate.context import Context
 from hautomate.intent import Intent
 from hautomate.apis import trigger
 from hautomate import Hautomate
@@ -10,14 +11,19 @@ from hautomate import Hautomate
 from tests.fixtures import cfg_hauto
 
 
-@test('Trigger API exposes waiters', tags=['unit'])
+@test('Trigger API exposes asyncio.Event-like waiters which return Context', tags=['unit'])
 async def _(cfg=cfg_hauto):
     hauto = Hautomate(cfg)
     await hauto.start()
 
-    # queue up a event fire and then wait on it
+    # queue up an event and then wait on it
     asyncio.create_task(hauto.bus.fire('SOME_EVENT', parent='ward.test'))
-    await trigger.wait_for('SOME_EVENT')
+    ctx = await trigger.wait_for('SOME_EVENT')
+    assert isinstance(ctx, Context) is True
+
+    # also catch that we allow duration
+    with raises(asyncio.TimeoutError):
+        await trigger.wait_for('SOME_EVENT', timeout=0.5)
 
 
 @test('trigger.{method_name}() returns an Intent & validates correctly', tags=['unit'])

@@ -112,7 +112,7 @@ class Hautomate:
         self._state = CoreState.starting
         await self.bus.fire(EVT_START, parent=self, wait='ALL_COMPLETED')  # Apps start
         self._state = CoreState.ready
-        await self.bus.fire(EVT_READY, parent=self, wait='ALL_COMPLETED')
+        await self.bus.fire(EVT_READY, parent=self)
 
     async def stop(self):
         """

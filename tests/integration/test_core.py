@@ -2,6 +2,7 @@ import asyncio
 
 from ward import test
 
+from hautomate.apis import trigger
 from hautomate.events import EVT_READY
 from hautomate.enums import CoreState
 from hautomate import Hautomate
@@ -25,7 +26,7 @@ async def _(cfg=cfg_hauto):
 
     await hauto.bus.fire('DUMMY', parent='ward.tests')
     asyncio.create_task(hauto.bus.fire('SOME_FOREIGN_EVENT', parent='ward.tests'))
-    await hauto.apis.trigger.wait_for('SOME_FOREIGN_EVENT')
+    await trigger.wait_for('SOME_FOREIGN_EVENT')
 
     await hauto.stop()
     assert hauto._state == CoreState.stopped
@@ -41,7 +42,7 @@ def _(cfg=cfg_hauto):
     hauto = Hautomate(cfg, loop=loop)
 
     async def _pipeline(ctx):
-        await hauto.apis.trigger.wait_for('SOME_FOREIGN_EVENT')
+        await trigger.wait_for('SOME_FOREIGN_EVENT')
         await hauto.stop()
 
     coro = hauto.bus.fire('SOME_FOREIGN_EVENT', parent='ward.tests')

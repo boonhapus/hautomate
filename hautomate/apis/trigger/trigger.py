@@ -17,7 +17,7 @@ class Trigger(API):
     """
     def __init__(self, hauto):
         super().__init__(hauto)
-        self._event_waiters = collections.defaultdict(lambda: asyncio.Event())
+        self._event_waiters = collections.defaultdict(lambda: hauto.loop.create_future())
 
     # Listeners and Internal Methods
 
@@ -34,28 +34,42 @@ class Trigger(API):
         """
         Called on every non-meta event.
 
-        This first time an event is fired, an asyncio.Event is created. The
-        event grabbed is set and cleared immediately, triggering all coroutines
-        who wait on the event to be awakened. The event is then cleared so that
-        new waiters may block until the next event fire.
+        This is the results-producer for those who are waiting on the
+        next valid event. Users will use trigger.wait_for in order to
+        listen to the next fire of a particular event. If they are the
+        first listener, an asyncio.Future is created and returned. All
+        successive listners get access to that same future.
+
+        almost_any_event will attempt to pop a future off the
+        defaultdict and set its result as the inbound Context. This acts
+        like an asyncio.Event with a result, notifying all those who
+        await it to wake up.
         """
-        evt = self._event_waiters[ctx.event]
-        evt.set()
-        evt.clear()
+        try:
+            fut = self._event_waiters.pop(ctx.event)
+            fut.set_result(ctx)
+        except KeyError:
+            pass
 
     # Public Methods
 
     @public_method
-    async def wait_for(self, event_name: str, *, timeout: float=None):
+    async def wait_for(self, event_name: str, *, timeout: float=None) -> Context:
         """
         Block until the next time <event_name> is seen.
 
         This method can be used to await any incoming event. It is
         particularly handy when waiting for an outside (of Hautomate)
         event to be pushed into the platform.
+
+        The context under which the event waited for will be returned.
         """
-        evt = self._event_waiters[event_name.upper()]
-        await asyncio.wait_for(evt.wait(), timeout)
+        fut = self._event_waiters[event_name.upper()]
+
+        # shield the future from cancellation if we reach a timeout so we don't
+        # interfere with other waiters
+        ctx = await asyncio.wait_for(asyncio.shield(fut), timeout)
+        return ctx
 
     # Intents
 

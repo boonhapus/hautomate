@@ -10,7 +10,7 @@ from hautomate.util.async_ import safe_sync
 from hautomate.settings import HautoConfig
 from hautomate.context import Context
 from hautomate.intent import Intent
-from hautomate.apis import moment
+from hautomate.apis import moment, trigger
 from hautomate import Hautomate
 
 from tests.fixtures import cfg_data_hauto, cfg_hauto
@@ -81,13 +81,13 @@ async def _(cfg=cfg_hauto):
 
     # ensure we're not lagging
     with raises(asyncio.TimeoutError):
-        await hauto.apis.trigger.wait_for(EVT_TIME_SLIPPAGE, timeout=0.5)
+        await trigger.wait_for(EVT_TIME_SLIPPAGE, timeout=0.5)
 
     # induce the lag
     asyncio.create_task(hauto.bus.fire('SOME_EVENT', parent='ward.test'))
 
     try:
-        await hauto.apis.trigger.wait_for(EVT_TIME_SLIPPAGE, timeout=1.5)
+        await trigger.wait_for(EVT_TIME_SLIPPAGE, timeout=1.5)
     except asyncio.TimeoutError:
         assert 1 == 2, 'no slippage occurred!'
 
