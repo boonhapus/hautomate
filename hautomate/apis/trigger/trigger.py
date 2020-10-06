@@ -17,7 +17,8 @@ class Trigger(API):
     """
     def __init__(self, hauto):
         super().__init__(hauto)
-        self._event_waiters = collections.defaultdict(lambda: asyncio.Event())
+        # self._event_waiters = collections.defaultdict(lambda: asyncio.Event())
+        self._event_waiters = collections.defaultdict(lambda: hauto.loop.create_future())
 
     # Listeners and Internal Methods
 
@@ -39,9 +40,11 @@ class Trigger(API):
         who wait on the event to be awakened. The event is then cleared so that
         new waiters may block until the next event fire.
         """
-        evt = self._event_waiters[ctx.event]
-        evt.set()
-        evt.clear()
+        fut = self._event_waiters.pop(ctx.event)
+        fut.set_result(ctx)
+        # evt = self._event_waiters[ctx.event]
+        # evt.set()
+        # evt.clear()
 
     # Public Methods
 
@@ -54,8 +57,11 @@ class Trigger(API):
         particularly handy when waiting for an outside (of Hautomate)
         event to be pushed into the platform.
         """
-        evt = self._event_waiters[event_name.upper()]
-        await asyncio.wait_for(evt.wait(), timeout)
+        # evt = self._event_waiters[event_name.upper()]
+        # await asyncio.wait_for(evt.wait(), timeout)
+        fut = self._event_waiters[event_name.upper()]
+        ctx = await asyncio.wait_for(fut, timeout)
+        return ctx
 
     # Intents
 
