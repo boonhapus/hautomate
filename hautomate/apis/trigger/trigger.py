@@ -65,7 +65,10 @@ class Trigger(API):
         The context under which the event waited for will be returned.
         """
         fut = self._event_waiters[event_name.upper()]
-        ctx = await asyncio.wait_for(fut, timeout)
+
+        # shield the future from cancellation if we reach a timeout so we don't
+        # interfere with other waiters
+        ctx = await asyncio.wait_for(asyncio.shield(fut), timeout)
         return ctx
 
     # Intents
