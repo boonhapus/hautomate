@@ -186,19 +186,3 @@ def _(cfg_data=cfg_data_hauto):
 
     with raises(HautoError):
         hauto.apis.some_obviously_not_included_api
-
-
-@test('APIs expose .fire(), ...', tags=['unit'])
-async def _(cfg=cfg_hauto):
-    hauto = Hautomate(cfg)
-    hauto.apis._load_all_apis(None)
-    counter = 0
-
-    async def _dummy(ctx):
-        """ Dumbest of them all, eh? """
-        nonlocal counter
-        counter += 1
-
-    hauto.bus.subscribe('SOME_EVENT', _dummy)
-    await hauto.apis.trigger.fire('SOME_EVENT', wait='ALL_COMPLETED')
-    assert counter == 1
