@@ -124,7 +124,7 @@ class HomeAssistant(API):
         #
         await self.fire(event.event_type, **event.data)
 
-    async def on_hass_state_changed(self, ctx: Context):
+    async def on_hass_state_change(self, ctx: Context):
         """
         Called when a Home Assistant Entity is updated.
         """
