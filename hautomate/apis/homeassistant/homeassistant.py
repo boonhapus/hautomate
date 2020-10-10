@@ -155,6 +155,8 @@ class HomeAssistant(API):
         _log.warning(
             f'somehow we made it past all the possible state updates:'
             f'\n\tentity_id={entity_id}'
+            f'\n\tstate equality: {old.state == new.state}'
+            f'\n\tattrs equality: {old.attributes == new.attributes}'
             f'\n\told_state={old}'
             f'\n\tnew_state={new}'
         )
