@@ -132,14 +132,6 @@ class HomeAssistant(API):
         old = ctx.event_data['old_state']
         new = ctx.event_data['new_state']
 
-        if (
-            old is not None
-            and new is not None
-            and old.state == new.state
-            and old.attributes != new.attributes
-        ):
-            await self.fire(HASS_ENTITY_UPDATE, entity_id=entity_id, old_entity=old, new_entity=new)
-
         if old is None:
             await self.fire(HASS_ENTITY_CREATE, entity_id=entity_id, new_entity=new)
             return
@@ -150,6 +142,10 @@ class HomeAssistant(API):
 
         if old.state != new.state:
             await self.fire(HASS_ENTITY_CHANGE, entity_id=entity_id, old_entity=old, new_entity=new)
+            return
+
+        if old.attributes != new.attributes:
+            await self.fire(HASS_ENTITY_UPDATE, entity_id=entity_id, old_entity=old, new_entity=new)
             return
 
         _log.warning(
