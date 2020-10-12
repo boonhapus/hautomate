@@ -5,6 +5,7 @@ import logging
 from homeassistant.const import EVENT_STATE_CHANGED
 from homeassistant.core import HomeAssistant as HASS, State
 
+from hautomate.util.async_ import safe_sync
 from hautomate.apis.homeassistant.checks import (
     EntityCheck, DiscreteValueCheck, ContinuousValueCheck
 )
@@ -159,7 +160,8 @@ class HomeAssistant(API):
 
     # Public Methods
 
-    @public_method  # safe_sync? depends on ws-interface impl.
+    @public_method
+    @safe_sync
     def get_entity(self, entity_id: str) -> State:
         """
         Retrieve state of entity_id or None if not found.
