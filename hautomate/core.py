@@ -10,7 +10,7 @@ from hautomate.settings import HautoConfig
 from hautomate.context import Context
 from hautomate.intent import Intent
 from hautomate.events import (
-    _META_EVENTS, _EVT_INIT, EVT_START, EVT_READY, EVT_CLOSE,
+    _META_EVENTS, _EVT_INIT, EVT_START, EVT_READY, EVT_STOP, EVT_CLOSE,
     EVT_INTENT_SUBSCRIBE, EVT_INTENT_START, EVT_INTENT_END,
     EVT_ANY
 )
@@ -122,6 +122,7 @@ class Hautomate:
         await self.bus.fire(EVT_CLOSE, parent=self, wait='ALL_COMPLETED')
         self._state = CoreState.stopped
         self._stopped.set()
+        await self.bus.fire(EVT_STOP, parent=self, wait='ALL_COMPLETED')
 
 
 class EventBus:
