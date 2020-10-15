@@ -204,7 +204,7 @@ class HomeAssistant(API):
         """
         TODO
         """
-        return self.hass_interface.create_entity(entity_id)
+        return self.hass_interface.create_helper(entity_id)
 
     @public_method
     async def call_service(
