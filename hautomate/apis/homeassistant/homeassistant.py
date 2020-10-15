@@ -57,27 +57,21 @@ class HassInterface:
             'the websocket implementation'
         )
 
-    async def create_helper(
-        self,
-        entity_id: str,
-        *,
-        state: str,
-        attributes: dict=None,
-        ephemeral: bool=True
-    ):
+    async def create_helper(self, helper, ephemeral: bool=True):
         """
         TODO
         """
         if self.am_component:
-            if self._hass.states.get(entity_id) is None:
-                _log.warning(
-                    f'attempting to create an entity that already exists! {entity_id}'
-                )
+            hass = self._hass
+            states = self._hass.states
 
-            self._hass.states.async_set(
-                entity_id, state, attributes, False, HASS_Context()
-            )
-            return self._hass.states.get(entity_id)
+            if states.get(helper.entity_id) is not None:
+                _log.warning(f'attempting to create an existing helper! {helper.entity_id}')
+            else:
+                entity_component = hass.data['entity_components'][helper.domain]
+                await entity_component.async_add_entities([helper])
+
+            return states.get(helper.entity_id)
 
         raise NotImplementedError(
             'creating a helper has not yet been registered for the websocket '
@@ -200,11 +194,11 @@ class HomeAssistant(API):
         return self.hass_interface.get_entity(entity_id)
 
     @public_method
-    async def create_helper(self, entity_id: str):
+    async def create_helper(self, helper: Helper):
         """
         TODO
         """
-        return self.hass_interface.create_helper(entity_id)
+        return self.hass_interface.create_helper(helper)
 
     @public_method
     async def call_service(
