@@ -3,7 +3,11 @@ import asyncio
 import logging
 
 from homeassistant.const import EVENT_STATE_CHANGED
-from homeassistant.core import HomeAssistant as HASS, State, hass_Context
+from homeassistant.core import (
+    HomeAssistant as HASS,
+    State,
+    Context as HASS_Context
+)
 
 from hautomate.util.async_ import safe_sync
 from hautomate.apis.homeassistant._compat import HassWebConnector
@@ -62,6 +66,7 @@ class HassInterface:
         ephemeral: bool=True
     ):
         """
+        TODO
         """
         if self.am_component:
             if self._hass.states.get(entity_id) is None:
@@ -70,7 +75,7 @@ class HassInterface:
                 )
 
             self._hass.states.async_set(
-                entity_id, state, attributes, False, hass_Context()
+                entity_id, state, attributes, False, HASS_Context()
             )
             return self._hass.states.get(entity_id)
 
