@@ -3,7 +3,7 @@ import asyncio
 import logging
 
 from homeassistant.const import EVENT_STATE_CHANGED
-from homeassistant.core import HomeAssistant as HASS, State
+from homeassistant.core import HomeAssistant as HASS, State, split_entity_id
 
 from hautomate.util.async_ import safe_sync
 from hautomate.apis.homeassistant._compat import HassWebConnector
@@ -60,11 +60,12 @@ class HassInterface:
         if self.am_component:
             hass = self._hass
             states = self._hass.states
+            domain, object_id = split_entity_id(helper.entity_id)
 
             if states.get(helper.entity_id) is not None:
                 _log.warning(f'attempting to create an existing helper! {helper.entity_id}')
             else:
-                entity_component = hass.data['entity_components'][helper.domain]
+                entity_component = hass.data['entity_components'][domain]
                 await entity_component.async_add_entities([helper])
 
             return states.get(helper.entity_id)
@@ -194,7 +195,7 @@ class HomeAssistant(API):
         """
         TODO
         """
-        return self.hass_interface.create_helper(helper)
+        return await self.hass_interface.create_helper(helper)
 
     @public_method
     async def call_service(
