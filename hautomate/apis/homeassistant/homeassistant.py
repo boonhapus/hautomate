@@ -3,13 +3,13 @@ import asyncio
 import logging
 
 from homeassistant.const import EVENT_STATE_CHANGED
-from homeassistant.core import HomeAssistant as HASS, State
+from homeassistant.core import HomeAssistant as HASS, State, hass_Context
 
 from hautomate.util.async_ import safe_sync
+from hautomate.apis.homeassistant._compat import HassWebConnector
 from hautomate.apis.homeassistant.checks import (
     EntityCheck, DiscreteValueCheck, ContinuousValueCheck
 )
-from hautomate.apis.homeassistant.compat import HassWebConnector
 from hautomate.apis.homeassistant.events import (
     HASS_STATE_CHANGED, HASS_ENTITY_CREATE, HASS_ENTITY_REMOVE, HASS_ENTITY_UPDATE,
     HASS_ENTITY_CHANGE
@@ -51,6 +51,27 @@ class HassInterface:
         raise NotImplementedError(
             'recording a copy of all states has not yet been registered for '
             'the websocket implementation'
+        )
+
+    async def create_helper(
+        self,
+        entity_id: str,
+        *,
+        state: str,
+        attributes: dict=None,
+        ephemeral: bool=True
+    ):
+        """
+        """
+        if self.am_component:
+            self._hass.states.async_set(
+                entity_id, state, attributes, False, hass_Context()
+            )
+            return self._hass.states.get(entity_id)
+
+        raise NotImplementedError(
+            'creating a helper has not yet been registered for the websocket '
+            'implementation'
         )
 
     async def call_service(
@@ -167,6 +188,13 @@ class HomeAssistant(API):
         Retrieve state of entity_id or None if not found.
         """
         return self.hass_interface.get_entity(entity_id)
+
+    @public_method
+    async def create_helper(self, entity_id: str):
+        """
+        TODO
+        """
+        return self.hass_interface.create_entity(entity_id)
 
     @public_method
     async def call_service(
