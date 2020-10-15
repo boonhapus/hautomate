@@ -1,4 +1,4 @@
-from homeassistant.components.input_text import InputBoolean, InputBooleanStorageCollection
+from homeassistant.components.input_boolean import InputBoolean, InputBooleanStorageCollection
 from homeassistant.components.input_text import InputText, InputTextStorageCollection
 from homeassistant.core import Entity
 
