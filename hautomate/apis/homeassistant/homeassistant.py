@@ -3,11 +3,7 @@ import asyncio
 import logging
 
 from homeassistant.const import EVENT_STATE_CHANGED
-from homeassistant.core import (
-    HomeAssistant as HASS,
-    State,
-    Context as HASS_Context
-)
+from homeassistant.core import HomeAssistant as HASS, State
 
 from hautomate.util.async_ import safe_sync
 from hautomate.apis.homeassistant._compat import HassWebConnector
@@ -194,7 +190,7 @@ class HomeAssistant(API):
         return self.hass_interface.get_entity(entity_id)
 
     @public_method
-    async def create_helper(self, helper: Helper):
+    async def create_helper(self, helper):
         """
         TODO
         """
