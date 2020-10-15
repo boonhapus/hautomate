@@ -16,4 +16,5 @@ def create_input_boolean(name, **data) -> Entity:
     """
     data['name'] = name
     cfg = InputBooleanStorageCollection.CREATE_SCHEMA(data)
+    cfg['id'] = name
     return InputBoolean(cfg, from_yaml=True)
