@@ -64,6 +64,11 @@ class HassInterface:
         """
         """
         if self.am_component:
+            if self._hass.states.get(entity_id) is None:
+                _log.warning(
+                    f'attempting to create an entity that already exists! {entity_id}'
+                )
+
             self._hass.states.async_set(
                 entity_id, state, attributes, False, hass_Context()
             )
