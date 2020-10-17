@@ -167,7 +167,8 @@ class HomeAssistant(API):
             await self.fire(HASS_ENTITY_CHANGE, entity_id=entity_id, old_entity=old, new_entity=new)
             return
 
-        if old.attributes != new.attributes:
+        # state changed, but attributes did
+        if old != new:
             await self.fire(HASS_ENTITY_UPDATE, entity_id=entity_id, old_entity=old, new_entity=new)
             return
 
