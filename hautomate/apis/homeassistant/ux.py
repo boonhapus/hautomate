@@ -31,7 +31,7 @@ def create_input_boolean(name: str, **data) -> Entity:
     data['name'] = name
     cfg = InputBooleanStorageCollection.CREATE_SCHEMA(data)
     cfg['id'] = name
-    return InputBoolean(cfg, from_yaml=True)
+    return InputBoolean.from_yaml(cfg)
 
 
 def create_input_select(name: str, options: List[str], **data) -> Entity:
