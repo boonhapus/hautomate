@@ -13,30 +13,34 @@ from hautomate.apis import homeassistant as hass
 _log = logging.getLogger(__name__)
 
 
-class InputBoolean:
+class HautomateEntity:
 
-    def __init__(self, name, **kw):
-        if name == 'DEFERRED_TO_SETNAME':
+    def __init__(self, collection_cls, hass_entity_cls, object_id, **kw):
+        if object_id == 'DEFERRED_TO_SETNAME':
+            kw['collection_cls'] = collection_cls
+            kw['hass_entity_cls'] = hass_entity_cls
             self._kw = kw
             self.entity = None
             return
 
-        kw['name'] = name
-        cfg = InputBooleanStorageCollection.CREATE_SCHEMA(kw)
-        cfg['id'] = name
-        self.entity = InputBoolean_.from_yaml(cfg)
+        kw['name'] = object_id
+        cfg = collection_cls.CREATE_SCHEMA(kw)
+        cfg['id'] = object_id
+        self.entity = hass_entity_cls.from_yaml(cfg)
 
-    def __set_name__(self, owner, name):
+    def __set_name__(self, owner, object_id: str):
         if self.entity is not None:
             return
 
         kw = self._kw.copy()
+        collection_cls = kw.pop('collection_cls')
+        hass_entity_cls = kw.pop('hass_entity_cls')
         del self._kw
 
-        kw['name'] = name
-        cfg = InputBooleanStorageCollection.CREATE_SCHEMA(kw)
-        cfg['id'] = name
-        self.entity = InputBoolean_.from_yaml(cfg)
+        kw['name'] = object_id
+        cfg = collection_cls.CREATE_SCHEMA(kw)
+        cfg['id'] = object_id
+        self.entity = hass_entity_cls.from_yaml(cfg)
 
     def __get__(self, instance, type=None):
         return self
@@ -46,11 +50,12 @@ class InputBoolean:
 
     async def create(self, ctx):
         """
+        Associate Hautomate representation with HomeAssistant.
         """
         self.entity = await hass.create_helper(self.entity)
 
-    def __str__(self):
-        return f'{self.entity}'
+    def __str__(self) -> Entity:
+        return self.entity
 
     @classmethod
     def as_control(cls, *, event='ready', **kw):
@@ -62,38 +67,52 @@ class InputBoolean:
         return ins
 
 
-def create_input_text(name: str, **data) -> Entity:
+class InputBoolean(HautomateEntity):
     """
+    Hautomate augmentation of the helper InputBoolean.
     """
-    data['name'] = name
-    cfg = InputTextStorageCollection.CREATE_SCHEMA(data)
-    cfg['id'] = name
-    return InputText_.from_yaml(cfg)
+    def __init__(self, object_id, **kw):
+        super().__init__(
+            InputBooleanStorageCollection,
+            InputBoolean_,
+            object_id,
+            **kw
+        )
 
 
-def create_input_number(name: str, **data) -> Entity:
+class InputText(HautomateEntity):
     """
     """
-    data['name'] = name
-    cfg = NumberStorageCollection.CREATE_SCHEMA(data)
-    cfg['id'] = name
-    return InputNumber_.from_yaml(cfg)
+    def __init__(self, object_id, **kw):
+        super().__init__(
+            InputTextStorageCollection,
+            InputText_,
+            object_id,
+            **kw
+        )
 
 
-def create_input_boolean(name: str, **data) -> Entity:
+class InputNumber(HautomateEntity):
     """
     """
-    data['name'] = name
-    cfg = InputBooleanStorageCollection.CREATE_SCHEMA(data)
-    cfg['id'] = name
-    return InputBoolean_.from_yaml(cfg)
+    def __init__(self, object_id, **kw):
+        super().__init__(
+            NumberStorageCollection,
+            InputNumber_,
+            object_id,
+            **kw
+        )
 
 
-def create_input_select(name: str, options: List[str], **data) -> Entity:
+class InputSelect(HautomateEntity):
     """
     """
-    data['name'] = name
-    data['options'] = options
-    cfg = InputSelectStorageCollection.CREATE_SCHEMA(data)
-    cfg['id'] = name
-    return InputSelect_.from_yaml(cfg)
+    def __init__(self, object_id, options: List[str], **kw):
+        kw['options'] = options
+
+        super().__init__(
+            InputSelectStorageCollection,
+            InputSelect_,
+            object_id,
+            **kw
+        )
