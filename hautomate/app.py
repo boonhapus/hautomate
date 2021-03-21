@@ -163,9 +163,17 @@ class AppRegistry:
         self._apps[name] = app
 
         # register_listeners
-        for name, meth in inspect.getmembers(app, inspect.ismethod):
+        is_valid = lambda o: inspect.ismethod(o) or hasattr(o, '__hauto_event__')
+
+        for name, meth in inspect.getmembers(app, is_valid):
             if name.startswith('on_'):
                 self.hauto.bus.subscribe(name[3:].upper(), meth)
+
+            if hasattr(meth, '__hauto_event__'):
+                evt = meth.__hauto_event__
+                listener = f'on_{evt}'
+                async_fn = getattr(meth, listener)
+                self.hauto.bus.subscribe(evt.upper(), async_fn)
 
             if hasattr(meth, '__intents__'):
                 for intent in meth.__intents__:
