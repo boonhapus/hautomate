@@ -1,11 +1,12 @@
 from typing import List
 import logging
 
-from homeassistant.components.input_boolean import InputBoolean_, InputBooleanStorageCollection
-from homeassistant.components.input_select import InputSelect_, InputSelectStorageCollection
-from homeassistant.components.input_number import InputNumber_, NumberStorageCollection
-from homeassistant.components.input_text import InputText_, InputTextStorageCollection
+from homeassistant.components.input_boolean import InputBoolean as InputBoolean_, InputBooleanStorageCollection
+from homeassistant.components.input_select import InputSelect as InputSelect_, InputSelectStorageCollection
+from homeassistant.components.input_number import InputNumber as InputNumber_, NumberStorageCollection
+from homeassistant.components.input_text import InputText as InputText_, InputTextStorageCollection
 from homeassistant.helpers.entity import Entity
+
 from hautomate.apis import homeassistant as hass
 
 
@@ -26,14 +27,16 @@ class InputBoolean:
         self.entity = InputBoolean_.from_yaml(cfg)
 
     def __set_name__(self, owner, name):
-        if self.entity is None:
-            kw = self._kw.copy()
-            del self._kw
+        if self.entity is not None:
+            return
 
-            kw['name'] = name
-            cfg = InputBooleanStorageCollection.CREATE_SCHEMA(kw)
-            cfg['id'] = name
-            self.entity = InputBoolean_.from_yaml(cfg)
+        kw = self._kw.copy()
+        del self._kw
+
+        kw['name'] = name
+        cfg = InputBooleanStorageCollection.CREATE_SCHEMA(kw)
+        cfg['id'] = name
+        self.entity = InputBoolean_.from_yaml(cfg)
 
     def __get__(self, instance, type=None):
         return self
@@ -51,7 +54,9 @@ class InputBoolean:
 
     @classmethod
     def as_control(cls, *, event='ready', **kw):
-        ins = cls(name='DEFERRED_TO_SETNAME', **kw)
+        kw['name'] = kw.get('name', 'DEFERRED_TO_SETNAME')
+
+        ins = cls(**kw)
         ins.__hauto_event__ = event
         setattr(ins, f'on_{event}', ins.create)
         return ins
