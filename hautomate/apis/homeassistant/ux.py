@@ -58,10 +58,8 @@ class HautomateEntity:
         return self.entity
 
     @classmethod
-    def as_control(cls, *, event='ready', **kw):
-        kw['name'] = kw.get('name', 'DEFERRED_TO_SETNAME')
-
-        ins = cls(**kw)
+    def as_control(cls, object_id='DEFERRED_TO_SETNAME', *, event='ready', **kw):
+        ins = cls(object_id, **kw)
         ins.__hauto_event__ = event
         setattr(ins, f'on_{event}', ins.create)
         return ins
@@ -107,7 +105,7 @@ class InputNumber(HautomateEntity):
 class InputSelect(HautomateEntity):
     """
     """
-    def __init__(self, object_id, options: List[str], **kw):
+    def __init__(self, object_id, *, options: List[str], **kw):
         kw['options'] = options
 
         super().__init__(
