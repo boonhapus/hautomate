@@ -48,11 +48,12 @@ class HautomateEntity:
     def __set__(self, instance, value):
         _log.error('cannot override this entity')
 
-    async def create(self, ctx):
+    async def create(self, *a, **kw):
         """
         Associate Hautomate representation with HomeAssistant.
         """
         self.entity = await hass.create_helper(self.entity)
+        return self.entity
 
     def __str__(self) -> Entity:
         return self.entity
@@ -80,6 +81,7 @@ class InputBoolean(HautomateEntity):
 
 class InputText(HautomateEntity):
     """
+    Hautomate augmentation of the helper InputText.
     """
     def __init__(self, object_id, **kw):
         super().__init__(
@@ -92,6 +94,7 @@ class InputText(HautomateEntity):
 
 class InputNumber(HautomateEntity):
     """
+    Hautomate augmentation of the helper InputNumber.
     """
     def __init__(self, object_id, **kw):
         super().__init__(
@@ -104,6 +107,7 @@ class InputNumber(HautomateEntity):
 
 class InputSelect(HautomateEntity):
     """
+    Hautomate augmentation of the helper InputSelect.
     """
     def __init__(self, object_id, *, options: List[str], **kw):
         kw['options'] = options
