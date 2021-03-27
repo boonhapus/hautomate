@@ -76,7 +76,7 @@ class API:
         """
         kwargs = {
             'event': event,
-            'parent': self.name,
+            'parent': self.api_name,
             'wait': wait,
             **event_data
         }

@@ -39,7 +39,7 @@ class HautoSensor(Entity):
         """
         """
         # pls don't look at this mess <:F
-        ha = hass.instances[hass.name].hass_interface._hass
+        ha = hass.instances[hass.api_name].hass_interface._hass
         platform = ha.data['hautomate']['sensor_platform']
         await platform.async_add_entities([self])
 
