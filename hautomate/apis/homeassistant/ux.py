@@ -1,4 +1,4 @@
-from typing import List
+from typing import Dict, List, Any
 import logging
 
 from homeassistant.components.input_boolean import InputBoolean as InputBoolean_, InputBooleanStorageCollection
@@ -13,7 +13,48 @@ from hautomate.apis import homeassistant as hass
 _log = logging.getLogger(__name__)
 
 
+class HautoSensor(Entity):
+    """
+    ...
+
+    Further Reading:
+    https://github.com/home-assistant/core/blob/55b689b4649a7bb916618b70bffa42296bdb41cf/homeassistant/helpers/entity.py#L130-L251
+    """
+    entity_registry_enabled_default = True
+    should_poll = False
+
+    @property
+    def state(self):
+        return self._state
+
+    @property
+    def state_attributes(self):
+        return self._state_attributes
+
+    @property
+    def icon(self):
+        return self._icon
+
+    async def create(self):
+        """
+        """
+        # pls don't look at this mess <:F
+        ha = hass.instances[hass.name].hass_interface._hass
+        platform = ha.data['hautomate']['sensor_platform']
+        await platform.async_add_entities([self])
+
+    async def update(self, state: str, attributes: Dict[str, Any]):
+        """
+        """
+        self._state = state
+        self._state_attributes = attributes
+        self.async_write_ha_state()
+
+
 class HautomateEntity:
+    """
+    Wrapper to create a HomeAssistant Helper.
+    """
 
     def __init__(self, collection_cls, hass_entity_cls, object_id, **kw):
         if object_id == 'DEFERRED_TO_SETNAME':
