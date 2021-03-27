@@ -219,12 +219,12 @@ class AppRegistry:
         _log.info(f"loading app '{app_name}'")
         module = self._load_app_module(app_name)
 
-        try:
-            apps = module.setup(self.hauto)
-        except AttributeError:
+        if not hasattr(module, 'setup'):
             _log.warning(f"couldn't find a setup function for '{app_name}'!")
             apps = []
         else:
+            apps = module.setup(self.hauto)
+
             if isinstance(apps, App):
                 apps = [apps]
 
