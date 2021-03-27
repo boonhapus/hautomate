@@ -40,10 +40,9 @@ class API:
     subclasses = {}
     instances = {}
 
-    def __init_subclass__(cls, name: str=None, **kwargs):
-        name = name or cls.__name__.lower()
+    def __init_subclass__(cls, **kwargs):
+        cls.api_name = name = cls.__name__.lower()
         cls.subclasses[name] = cls
-        cls.name = name
         super().__init_subclass__(**kwargs)
 
     def __init__(self, hauto):
@@ -51,7 +50,7 @@ class API:
         self.intents = []
 
         cls = type(self)
-        cls.instances[cls.name] = self
+        cls.instances[cls.api_name] = self
 
     @property
     def hauto(self):
@@ -130,7 +129,7 @@ class public_method(Asyncable):
     """
     def __get__(self, instance: object, owner: API):
         if instance is None:
-            instance = owner.instances[owner.name]
+            instance = owner.instances[owner.api_name]
 
         # if it's safe_sync, happy to run this in the event loop directly
         if self.concurrency == 'safe_sync':
@@ -162,7 +161,7 @@ class api_method:
 
     def __get__(self, instance: object, owner: API):
         if instance is None:
-            instance = owner.instances[owner.name]
+            instance = owner.instances[owner.api_name]
 
         # bind the api instance so we can later access
         # hauto.bus.subscribe for the resulting Intent
