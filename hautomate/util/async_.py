@@ -41,7 +41,10 @@ def determine_concurrency(func: Callable) -> str:
 
     # Lambdas are meant to be short expressions, so it's USUALLY a safe bet that they're
     # not doing CPU- or IO-heavy operations.
-    if hasattr(func, 'safe_sync') or getattr(func, '__name__', None) == '<lambda>':
+    if any((
+        hasattr(func, 'safe_sync'),
+        getattr(func, '__name__', None) == '<lambda>',
+    )):
         return 'safe_sync'
 
     return 'potentially_unsafe_sync'

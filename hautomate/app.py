@@ -1,12 +1,10 @@
 from typing import List
 from types import ModuleType
-import importlib.machinery
 import importlib
 import asyncio
 import inspect
 import logging
 import uuid
-import sys
 
 from hautomate.util.async_ import safe_sync
 from hautomate.context import Context
@@ -17,19 +15,54 @@ from hautomate.events import EVT_START, EVT_APP_LOAD, EVT_APP_UNLOAD
 _log = logging.getLogger(__name__)
 
 
-class AppFinder(importlib.machinery.PathFinder):
-    _arbitrary_path = None
+# class AppMeta(type):
+#     """
+#     Metaclass for an App.
 
-    @classmethod
-    def set_path(cls, path):
-        cls._arbitrary_path = [path]
-        return cls
+#     The metaclass exists for mostly a single reason. Users mess up. We
+#     want to be able to tell our users when and how they mess up. The
+#     metaclass inspects how an App was initialized and if the user missed
+#     a super().__init__(hauto), we inform them as much.
+#     """
 
-    @classmethod
-    def find_spec(cls, fullname, path=None, target=None):
-        return super().find_spec(fullname, cls._arbitrary_path, target)
+#     def formulate_signature(cls, ins, *a, **kw):
+#         from inspect import signature
+#         sig = signature(ins.__init__)
+
+#         try:
+#             bound = sig.bind(*a, **kw)
+#         except TypeError as exc:
+#             raise TypeError(exc) from None
+
+#         # need to determine appropriate signature
+#         # need to bind signature
+#         # need to extract hauto, args, kwargs
+
+#         return cls._hauto, bound.args, bound.kwargs
+
+#     def __call__(cls, *a, **kw):
+#         ins = cls.__new__(cls)
+
+#         if type(ins) == cls:
+#             hauto, args, kwargs = AppMeta.formulate_signature(cls, ins, *a, **kw)
+#             ins.__init__(*args, **kwargs)
+
+#             if not hasattr(ins, '_id'):
+#                 _log.warning(
+#                     f"oops! app {ins} did not call super().__init__(hauto)! please see "
+#                     f"<< docs link >> to ensure you're appropriately setting your apps "
+#                     f"up!"
+#                 )
+
+#                 ins._id = id_ = str(uuid.uuid4())[:8]
+#                 ins._hauto = hauto
+#                 ins._name = kwargs.pop('name', None) or f'{cls.__name__}_{id_}'
+#                 ins._intents = []
+
+#         return ins
 
 
+# class App(metaclass=AppMeta):  # TBD
 class App:
     """
     Base class for a User's entrypoint into Hautomate.
@@ -83,14 +116,7 @@ class AppRegistry:
         self.apps_dir = hauto.config.apps_dir
         self._apps = {}
 
-        self.__set_finder()
         self.hauto.bus.subscribe(EVT_START, self._load_all_apps)
-
-    def __set_finder(self):
-        """
-        """
-        finder = AppFinder.set_path(self.apps_dir.parent.as_posix())
-        sys.meta_path.append(finder)
 
     @property
     def names(self) -> list:
@@ -109,6 +135,23 @@ class AppRegistry:
                 continue
 
             self.load_app(path.stem)
+
+    def _load_app_module(self, app: str) -> ModuleType:
+        """
+        Load an app.py file.
+        """
+        if (self.apps_dir / app).is_dir():
+            fp = self.apps_dir / app / f'{app}.py'
+        else:
+            fp = self.apps_dir / f'{app}.py'
+
+        if not fp.exists():
+            raise ImportError(f"app file '{app}' could not be found")
+
+        app_spec = importlib.util.spec_from_file_location(fp.stem, fp)
+        module = importlib.util.module_from_spec(app_spec)
+        app_spec.loader.exec_module(module)
+        return module
 
     def _register(self, name: str, app: App) -> None:
         """
@@ -174,15 +217,13 @@ class AppRegistry:
         not be candidates for loading.
         """
         _log.info(f"loading app '{app_name}'")
+        module = self._load_app_module(app_name)
 
-        name = f'{self.cogs_dir.parent.stem}.{app_name}'
-        lib  = importlib.import_module(name)
-
-        if not hasattr(lib, 'setup'):
+        if not hasattr(module, 'setup'):
             _log.warning(f"couldn't find a setup function for '{app_name}'!")
             apps = []
         else:
-            apps = lib.setup(self.hauto)
+            apps = module.setup(self.hauto)
 
             if isinstance(apps, App):
                 apps = [apps]
