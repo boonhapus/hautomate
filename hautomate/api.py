@@ -135,7 +135,7 @@ class public_method(Asyncable):
         if self.concurrency == 'safe_sync':
             injected = ft.partial(self.func, instance)
         else:
-            injected = ft.partial(self, instance, loop=instance.hauto.loop)
+            injected = ft.partial(self.__call__, instance, loop=instance.hauto.loop)
 
         instance.__dict__[self.func.__name__] = injected
         return injected
